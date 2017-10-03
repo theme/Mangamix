@@ -1,0 +1,2 @@
+# Mangamix
+Manga zip viewer
