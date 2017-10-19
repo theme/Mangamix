@@ -38,18 +38,43 @@
 - (void) openImage:(NSURL*) url{
     NSLog(@"%@", [NSString stringWithFormat: @"openImage:(NSURL*) %@", url.absoluteString]);
     if (!_imageView.image){
-        _imageView.image = [[NSImage alloc] initByReferencingURL:url];
+        [self imageFromJPG:url];
     } else {
-//        [_imageView.image release]; // not needed because of ARC
-        _imageView.image = [[NSImage alloc] initByReferencingURL:url];
         NSLog( @"Image is already loaded." );
+    }
+}
+
+- (void) imageFromJPG:(NSURL*) url{
+    NSFileManager *fm = [NSFileManager defaultManager];
+    
+    NSError *err;
+    NSString *ft = [fm attributesOfItemAtPath:url.path error:&err].fileType;
+    if ( NULL != err ){
+        NSLog(@"error getting file type%@", [err localizedDescription]);
+    }
+    
+    NSLog(@"file type%@", ft);
+    
+    //
+    if ( [fm isReadableFileAtPath:url.path] ){
+        _imageView.image = [[NSImage alloc] initByReferencingURL:url];
+        
+        NSData *databuffer;
+        databuffer = [fm contentsAtPath:url.path];
+        
+        NSData *header = [NSData alloc];
+        const int BUFLEN = 10;
+        unsigned char* buffer[BUFLEN];
+        [databuffer getBytes:buffer length:BUFLEN];
+        header = [header initWithBytes:buffer length:BUFLEN];
+        NSLog(@"%@", [header description]);
     }
 }
 
 - (void)viewDidLoad {
     [super viewDidLoad];
 
-    // Do any additional setup after loading the view.
+    // Do any additional setup after loading the view.u
 }
 
 
