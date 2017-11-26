@@ -11,6 +11,8 @@
 @interface ViewController : NSViewController
 
 @property (weak) IBOutlet NSImageView *imageView;
+@property (strong) NSOpenPanel *openImagePanel;
+
 
 @end
 
