@@ -7,6 +7,14 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		A5500B221FF50D3400F5A216 /* jpegdec.c in Sources */ = {isa = PBXBuildFile; fileRef = A5500B211FF50D3400F5A216 /* jpegdec.c */; };
+		A5500B231FF50D3400F5A216 /* jpegdec.c in Sources */ = {isa = PBXBuildFile; fileRef = A5500B211FF50D3400F5A216 /* jpegdec.c */; };
+		A59E93491FEE5778004A9F48 /* JifDecoder.m in Sources */ = {isa = PBXBuildFile; fileRef = A59E93481FEE5778004A9F48 /* JifDecoder.m */; };
+		A59E934A1FEE5778004A9F48 /* JifDecoder.m in Sources */ = {isa = PBXBuildFile; fileRef = A59E93481FEE5778004A9F48 /* JifDecoder.m */; };
+		A59E934E1FF3ED30004A9F48 /* ImageIO.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A59E934D1FF3ED2F004A9F48 /* ImageIO.framework */; };
+		A59E934F1FF3ED3C004A9F48 /* ImageIO.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A59E934D1FF3ED2F004A9F48 /* ImageIO.framework */; };
+		A5B8C0B220117109002A3E0D /* jif.c in Sources */ = {isa = PBXBuildFile; fileRef = A5B8C0B120117109002A3E0D /* jif.c */; };
+		A5B8C0B320117109002A3E0D /* jif.c in Sources */ = {isa = PBXBuildFile; fileRef = A5B8C0B120117109002A3E0D /* jif.c */; };
 		A5F71D1A1F83D11B00B045C9 /* AppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = A5F71D191F83D11B00B045C9 /* AppDelegate.m */; };
 		A5F71D1D1F83D11B00B045C9 /* ViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = A5F71D1C1F83D11B00B045C9 /* ViewController.m */; };
 		A5F71D1F1F83D11B00B045C9 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A5F71D1E1F83D11B00B045C9 /* Assets.xcassets */; };
@@ -14,6 +22,8 @@
 		A5F71D251F83D11B00B045C9 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = A5F71D241F83D11B00B045C9 /* main.m */; };
 		A5F71D301F83D11B00B045C9 /* MangamixTests.m in Sources */ = {isa = PBXBuildFile; fileRef = A5F71D2F1F83D11B00B045C9 /* MangamixTests.m */; };
 		A5F71D3B1F83D11B00B045C9 /* MangamixUITests.m in Sources */ = {isa = PBXBuildFile; fileRef = A5F71D3A1F83D11B00B045C9 /* MangamixUITests.m */; };
+		A5FFC1F72012B27700A4A9CD /* baseline-optimized-ps.jpg in Resources */ = {isa = PBXBuildFile; fileRef = A5FFC1F52012B27700A4A9CD /* baseline-optimized-ps.jpg */; settings = {ASSET_TAGS = ("sample jpg", ); }; };
+		A5FFC1F82012B27700A4A9CD /* baseline-standard.jpg in Resources */ = {isa = PBXBuildFile; fileRef = A5FFC1F62012B27700A4A9CD /* baseline-standard.jpg */; settings = {ASSET_TAGS = ("sample jpg", ); }; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -34,6 +44,14 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		A5500B201FF50D3400F5A216 /* jpegdec.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = jpegdec.h; sourceTree = "<group>"; };
+		A5500B211FF50D3400F5A216 /* jpegdec.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = jpegdec.c; sourceTree = "<group>"; };
+		A557EABC2004065C00893FDC /* jimage.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = jimage.h; sourceTree = "<group>"; };
+		A557EABD2004065C00893FDC /* jif.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = jif.h; sourceTree = "<group>"; };
+		A59E93471FEE5778004A9F48 /* JifDecoder.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = JifDecoder.h; sourceTree = "<group>"; };
+		A59E93481FEE5778004A9F48 /* JifDecoder.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = JifDecoder.m; sourceTree = "<group>"; };
+		A59E934D1FF3ED2F004A9F48 /* ImageIO.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = ImageIO.framework; path = System/Library/Frameworks/ImageIO.framework; sourceTree = SDKROOT; };
+		A5B8C0B120117109002A3E0D /* jif.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = jif.c; sourceTree = "<group>"; };
 		A5F71D151F83D11B00B045C9 /* Mangamix.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Mangamix.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A5F71D181F83D11B00B045C9 /* AppDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AppDelegate.h; sourceTree = "<group>"; };
 		A5F71D191F83D11B00B045C9 /* AppDelegate.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = AppDelegate.m; sourceTree = "<group>"; };
@@ -50,6 +68,8 @@
 		A5F71D361F83D11B00B045C9 /* MangamixUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MangamixUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		A5F71D3A1F83D11B00B045C9 /* MangamixUITests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = MangamixUITests.m; sourceTree = "<group>"; };
 		A5F71D3C1F83D11B00B045C9 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		A5FFC1F52012B27700A4A9CD /* baseline-optimized-ps.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = "baseline-optimized-ps.jpg"; sourceTree = "<group>"; };
+		A5FFC1F62012B27700A4A9CD /* baseline-standard.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = "baseline-standard.jpg"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -57,6 +77,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A59E934E1FF3ED30004A9F48 /* ImageIO.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -64,6 +85,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A59E934F1FF3ED3C004A9F48 /* ImageIO.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -77,6 +99,28 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		A59E93331FE7D62B004A9F48 /* jpeg */ = {
+			isa = PBXGroup;
+			children = (
+				A557EABD2004065C00893FDC /* jif.h */,
+				A5B8C0B120117109002A3E0D /* jif.c */,
+				A557EABC2004065C00893FDC /* jimage.h */,
+				A59E93471FEE5778004A9F48 /* JifDecoder.h */,
+				A59E93481FEE5778004A9F48 /* JifDecoder.m */,
+				A5500B201FF50D3400F5A216 /* jpegdec.h */,
+				A5500B211FF50D3400F5A216 /* jpegdec.c */,
+			);
+			path = jpeg;
+			sourceTree = "<group>";
+		};
+		A59E934C1FF3ED2F004A9F48 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				A59E934D1FF3ED2F004A9F48 /* ImageIO.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
 		A5F71D0C1F83D11B00B045C9 = {
 			isa = PBXGroup;
 			children = (
@@ -84,6 +128,7 @@
 				A5F71D2E1F83D11B00B045C9 /* MangamixTests */,
 				A5F71D391F83D11B00B045C9 /* MangamixUITests */,
 				A5F71D161F83D11B00B045C9 /* Products */,
+				A59E934C1FF3ED2F004A9F48 /* Frameworks */,
 			);
 			sourceTree = "<group>";
 		};
@@ -100,6 +145,7 @@
 		A5F71D171F83D11B00B045C9 /* Mangamix */ = {
 			isa = PBXGroup;
 			children = (
+				A59E93331FE7D62B004A9F48 /* jpeg */,
 				A5F71D181F83D11B00B045C9 /* AppDelegate.h */,
 				A5F71D191F83D11B00B045C9 /* AppDelegate.m */,
 				A5F71D1B1F83D11B00B045C9 /* ViewController.h */,
@@ -116,6 +162,7 @@
 		A5F71D2E1F83D11B00B045C9 /* MangamixTests */ = {
 			isa = PBXGroup;
 			children = (
+				A5FFC1FB2012B2F500A4A9CD /* sample */,
 				A5F71D2F1F83D11B00B045C9 /* MangamixTests.m */,
 				A5F71D311F83D11B00B045C9 /* Info.plist */,
 			);
@@ -129,6 +176,15 @@
 				A5F71D3C1F83D11B00B045C9 /* Info.plist */,
 			);
 			path = MangamixUITests;
+			sourceTree = "<group>";
+		};
+		A5FFC1FB2012B2F500A4A9CD /* sample */ = {
+			isa = PBXGroup;
+			children = (
+				A5FFC1F52012B27700A4A9CD /* baseline-optimized-ps.jpg */,
+				A5FFC1F62012B27700A4A9CD /* baseline-standard.jpg */,
+			);
+			path = sample;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -193,6 +249,9 @@
 		A5F71D0D1F83D11B00B045C9 /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
+				KnownAssetTags = (
+					"sample jpg",
+				);
 				LastUpgradeCheck = 0900;
 				ORGANIZATIONNAME = theme;
 				TargetAttributes = {
@@ -246,6 +305,8 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A5FFC1F72012B27700A4A9CD /* baseline-optimized-ps.jpg in Resources */,
+				A5FFC1F82012B27700A4A9CD /* baseline-standard.jpg in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -264,7 +325,10 @@
 			buildActionMask = 2147483647;
 			files = (
 				A5F71D1D1F83D11B00B045C9 /* ViewController.m in Sources */,
+				A5500B221FF50D3400F5A216 /* jpegdec.c in Sources */,
 				A5F71D251F83D11B00B045C9 /* main.m in Sources */,
+				A5B8C0B220117109002A3E0D /* jif.c in Sources */,
+				A59E93491FEE5778004A9F48 /* JifDecoder.m in Sources */,
 				A5F71D1A1F83D11B00B045C9 /* AppDelegate.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -273,7 +337,10 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A5500B231FF50D3400F5A216 /* jpegdec.c in Sources */,
+				A59E934A1FEE5778004A9F48 /* JifDecoder.m in Sources */,
 				A5F71D301F83D11B00B045C9 /* MangamixTests.m in Sources */,
+				A5B8C0B320117109002A3E0D /* jif.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

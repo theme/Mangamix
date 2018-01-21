@@ -67,7 +67,7 @@
                                         </menuItem>
                                         <menuItem title="Open…" keyEquivalent="o" id="IAo-SY-fd9">
                                             <connections>
-                                                <action selector="openDocument:" target="Ady-hI-5gd" id="bVn-NM-KNZ"/>
+                                                <action selector="Open:" target="Voe-Tx-rLC" id="i8M-K5-OzT"/>
                                             </connections>
                                         </menuItem>
                                         <menuItem title="Open Recent" id="tXI-mr-wws">
@@ -672,10 +672,15 @@
                         </items>
                     </menu>
                     <connections>
+                        <outlet property="OpenMenu" destination="IAo-SY-fd9" id="4lg-6V-R7c"/>
                         <outlet property="delegate" destination="Voe-Tx-rLC" id="PrD-fu-P6m"/>
                     </connections>
                 </application>
-                <customObject id="Voe-Tx-rLC" customClass="AppDelegate"/>
+                <customObject id="Voe-Tx-rLC" customClass="AppDelegate">
+                    <connections>
+                        <outlet property="open" destination="IAo-SY-fd9" id="hLc-9i-clE"/>
+                    </connections>
+                </customObject>
                 <customObject id="YLy-65-1bz" customClass="NSFontManager"/>
                 <customObject id="Ady-hI-5gd" userLabel="First Responder" customClass="NSResponder" sceneMemberID="firstResponder"/>
             </objects>
