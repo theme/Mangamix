@@ -17,14 +17,14 @@
 /* DCT tables */
 #define DCTSIZE     64
 
-typedef union QTBL {
-    uint8_t Q8[DCTSIZE];
-    uint16_t Q16[DCTSIZE];
-} J_QUANT_TABLE;
-
-typedef struct {
-    unsigned Lq;    /* length of DQT table definition bytes */
-} J_DQT_PARAM;
+typedef union QUANT_TABLE_ARRAY {
+    uint8_t     Q8[DCTSIZE];
+    uint16_t    Q16[DCTSIZE];
+} qtbl_arr;
+typedef struct QUANT_TABLE {
+    uint8_t     precison;   /* 8 | 16 */
+    qtbl_arr    coeff_a;      /* DCT coeff array in zig-zag order */
+} J_QTABLE;
 
 typedef enum {
     J_DEC_NEW,
@@ -34,27 +34,23 @@ typedef enum {
 } J_DEC_STAT;
 
 typedef struct {
-    uint16_t width;    /* jpeg usual size : 1 ~ 65535 */
-    uint16_t height;
-    uint8_t num_of_components;
-    J_COLOR_SPACE color_space;
-    uint8_t bits_per_pixel;
-    uint8_t bits_per_component;    /* TODO ? In decoded raw image, each component has same depth. */
+    uint16_t    width;    /* jpeg usual size : 1 ~ 65535 */
+    uint16_t    height;
+    uint8_t     num_of_components;
+    J_COLOR_SPACE   color_space;
+    uint8_t     bits_per_pixel;
+    uint8_t     bits_per_component;    /* TODO ? In decoded raw image, each component has same depth. */
 } J_IMAGE;
 
 typedef struct J_DEC_INFO {
-    byte* src;  /* source jif array (to be decoded) */
-    jif_offset src_size;
-    JIF_SCANNER * jif_scanner;
-    
-    bool is_mode_hierarchical; /* Jif contains a DHP marker segment before non-differential frame or frames. */
-    
-    J_QUANT_TABLE qtables[4];
-    
-    J_DEC_STAT stat;
-    J_ERR err;
-    
-    J_IMAGE img;
+    byte*           src;  /* source jif array (to be decoded) */
+    jif_offset      src_size;
+    JIF_SCANNER *   jif_scanner;
+    bool            is_mode_hierarchical; /* Jif contains a DHP marker segment before non-differential frame or frames. */
+    J_QTABLE        qtables[4];
+    J_DEC_STAT      stat;
+    J_ERR           err;
+    J_IMAGE         img;
 } * pinfo;
 
 pinfo j_dec_new(void) {
@@ -104,8 +100,31 @@ bool j_dec_read_header(pinfo dinfo){
                 
                 break;
             case M_DQT:
+            {   uint16_t Lq = (jif_scan_next_byte(s) << 8) + jif_scan_next_byte(s);
+                uint16_t offset = 2;
                 
+                byte b = jif_scan_next_byte(s);
+                offset++;
+                uint8_t Pq = ( b & 0xF0 )  >> 4 ;
+                uint8_t Tq = b & 0x0F;
+                
+                dinfo->qtables[Tq].precison = ( 0 == Pq ) ? 8 : 16;
+                while (offset < Lq) {
+                    for (int i = 0 ; i < 64 ; i++){
+                        if ( 0 == Pq ){
+                            uint8_t c = jif_scan_next_byte(s);
+                            offset++;
+                            dinfo->qtables[Tq].coeff_a.Q8[i] = c;
+                        } else /* 1 == Pq */ {
+                            uint16_t c = (jif_scan_next_byte(s) << 8) + jif_scan_next_byte(s);
+                            offset += 2;
+                            dinfo->qtables[Tq].coeff_a.Q16[i] = c;
+                        }
+                    }
+                }
                 break;
+                
+            }
             case M_DRI:
                 
                 break;
@@ -190,7 +209,6 @@ int j_info_get_component_depth(int comp_i, pinfo dinfo){
 
 bool j_dec_decode_frames(pinfo dinfo){
     dinfo->stat = J_DEC_FRAMES;
-    
     
     return false;
 }
