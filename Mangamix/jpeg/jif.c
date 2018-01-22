@@ -49,6 +49,10 @@ bool jif_scan_next_marker(JIF_SCANNER * s){
     return false;
 }
 
+JIF_MARKER jif_get_current_marker(JIF_SCANNER * s){
+    return s->pjif[s->m];
+}
+
 bool jif_scan_next_maker_of(JIF_MARKER m, JIF_SCANNER * s ){
     
     while ( jif_scan_next_marker(s) ){
@@ -64,10 +68,12 @@ byte jif_scan_next_byte(JIF_SCANNER * s){
     return s->pjif[++s->i];
 }
 
-bool jif_read_frame_param(JIF_SCANNER * s) {
-    int c;
-    byte b;
-    JIF_MARKER m = jif_get_current_marker(s);
+bool jif_read_quat_table_spec(JIF_SCANNER * s){
+    
+    return false;
+}
+
+bool jif_is_sof_marker(JIF_MARKER m){
     switch (m) {
         case M_SOF0:
         case M_SOF1:
@@ -76,28 +82,32 @@ bool jif_read_frame_param(JIF_SCANNER * s) {
         case M_SOF9:
         case M_SOF10:
         case M_SOF11:
-            s->frame.Lf = (jif_scan_next_byte(s) << 8) + jif_scan_next_byte(s);
-            s->frame.P = jif_scan_next_byte(s);
-            s->frame.Y = (jif_scan_next_byte(s) << 8) + jif_scan_next_byte(s);
-            s->frame.X = (jif_scan_next_byte(s) << 8) + jif_scan_next_byte(s);
-            s->frame.Nf = jif_scan_next_byte(s);
-            for(c = 0; c < s->frame.Nf; c++){
-                s->frame.comps[c].C = jif_scan_next_byte(s);
-                b = jif_scan_next_byte(s);
-                s->frame.comps[c].H = ( b >> 4 );
-                s->frame.comps[c].V = ( 0x0f & b );
-                s->frame.comps[c].Tq = jif_scan_next_byte(s);
-            }
-            break;
-            
+            return true;
         default:
-            break;
+            return false;
     }
-    return true;
 }
 
-JIF_MARKER jif_get_current_marker(JIF_SCANNER * s){
-    return s->pjif[s->m];
+bool jif_read_sof_param(JIF_SCANNER * s) {
+    int c;
+    byte b;
+    JIF_MARKER m = jif_get_current_marker(s);
+    if( jif_is_sof_marker(m)){
+        s->frame.Lf = (jif_scan_next_byte(s) << 8) + jif_scan_next_byte(s);
+        s->frame.P = jif_scan_next_byte(s);
+        s->frame.Y = (jif_scan_next_byte(s) << 8) + jif_scan_next_byte(s);
+        s->frame.X = (jif_scan_next_byte(s) << 8) + jif_scan_next_byte(s);
+        s->frame.Nf = jif_scan_next_byte(s);
+        for(c = 0; c < s->frame.Nf; c++){
+            s->frame.comps[c].C = jif_scan_next_byte(s);
+            b = jif_scan_next_byte(s);
+            s->frame.comps[c].H = ( b >> 4 );
+            s->frame.comps[c].V = ( 0x0f & b );
+            s->frame.comps[c].Tq = jif_scan_next_byte(s);
+        }
+        return true;
+    }
+    return false;
 }
 
 

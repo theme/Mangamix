@@ -35,6 +35,7 @@ typedef struct J_DEC_INFO {
     jif_offset src_size;
     J_IMAGE img;
     bool is_mode_hierarchical; /* Jif contains a DHP marker segment before non-differential frame or frames. */
+    JIF_SCANNER * jif_scanner;
 } *pinfo;
 
 
@@ -55,17 +56,78 @@ bool j_dec_set_src_array(unsigned char *src, unsigned long long size, pinfo dinf
 
 /* scan to jif header, read image meta data into dinfo */
 bool j_dec_read_header(pinfo dinfo){
+    JIF_MARKER m;
+    bool hasSOF = false;
+    
     if( 0 == dinfo->src_arr ) {
         return false;
     }
     JIF_SCANNER * s = jif_new_scanner(dinfo->src_arr, dinfo->src_size);
+    dinfo->jif_scanner = s;
     
     /* scan to SOI: start of image */
     if( !jif_scan_next_maker_of(M_SOI, s) ){
         return false;
     }
     
+    /* TODO: set up decoder */
+    
+    /* interpret Table spec and misc (APP, COMMENT ... ) */
+    while ( jif_scan_next_marker(s) && !jif_is_sof_marker(jif_get_current_marker(s))){
+        
+    }
+    
     /* scan to a frame segment, and get image size */
+    /* In case of hierarchical mode, there are multiple frames, scan all and take the biggest. */
+    while( jif_scan_next_marker(s) && jif_is_sof_marker(jif_get_current_marker(s))) {
+        jif_read_sof_param(s);
+        dinfo->img.width = s->frame.X;
+        dinfo->img.height = s->frame.Y;
+        switch (s->frame.Nf) {
+            case 1:
+                dinfo->img.color_space = J_COLOR_GRAY;
+                dinfo->img.num_of_components = 1;
+                break;
+            case 3:
+                dinfo->img.color_space = J_COLOR_RGB;   /* output RGB */
+                dinfo->img.num_of_components = 3;
+                break;
+            case 4:
+                dinfo->img.color_space = J_COLOR_CMYK;
+                dinfo->img.num_of_components = 4;
+                break;
+            default:
+                break;
+        }
+        dinfo->img.bits_per_component = s->frame.P; // TODO ?
+        dinfo->img.bits_per_pixel = dinfo->img.bits_per_component * dinfo->img.num_of_components;
+        hasSOF = true;
+    }
+    
+    return hasSOF;
+};
+
+unsigned long j_info_get_width(pinfo dinfo){
+    return dinfo->img.width;
+};
+
+unsigned long j_info_get_height(pinfo dinfo){
+    return dinfo->img.height;
+};
+
+J_COLOR_SPACE j_info_get_colorspace(pinfo dinfo){
+    return dinfo->img.color_space;
+}
+
+int j_info_get_num_of_components(pinfo dinfo){
+    return dinfo->img.num_of_components;
+}
+int j_info_get_component_depth(int comp_i, pinfo dinfo){
+    return dinfo->img.bits_per_component;    /* TODO : "a decoder with appropriate accuracy" */
+}
+
+bool j_dec_decode(pinfo dinfo){
+    JIF_SCANNER * s = dinfo->jif_scanner;
     /* In case of hierarchical mode, there are multiple frames, scan all and take the biggest. */
     while( jif_scan_next_marker(s)) {
         JIF_MARKER m = jif_get_current_marker(s);
@@ -75,7 +137,7 @@ bool j_dec_read_header(pinfo dinfo){
                 return false; /* TODO */
                 break;
             case M_SOF0:    /* the only supported base line DCT (non-differential, Huffman coding) */
-                jif_read_frame_param(s);
+                jif_read_sof_param(s);
                 dinfo->img.width = s->frame.X;
                 dinfo->img.height = s->frame.Y;
                 switch (s->frame.Nf) {
@@ -101,30 +163,6 @@ bool j_dec_read_header(pinfo dinfo){
                 break;
         }
     }
-    
-    return false;
-};
-
-unsigned long j_info_get_width(pinfo dinfo){
-    return dinfo->img.width;
-};
-
-unsigned long j_info_get_height(pinfo dinfo){
-    return dinfo->img.height;
-};
-
-J_COLOR_SPACE j_info_get_colorspace(pinfo dinfo){
-    return dinfo->img.color_space;
-}
-
-int j_info_get_num_of_components(pinfo dinfo){
-    return dinfo->img.num_of_components;
-}
-int j_info_get_component_depth(int comp_i, pinfo dinfo){
-    return dinfo->img.bits_per_component;    /* TODO : "a decoder with appropriate accuracy" */
-}
-
-bool j_dec_decode(pinfo dinfo){
     return false;
 }
 
