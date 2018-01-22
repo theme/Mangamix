@@ -7,6 +7,7 @@
 //
 
 #include "jpegdec.h"
+#include "jif.h"    /* inside decoder scope */
 
 #define err(S) fprintf(stderr, S)
 
@@ -33,6 +34,7 @@ typedef struct J_DEC_INFO {
     byte* src_arr;  /* source jif array (to be decoded) */
     jif_offset src_size;
     J_IMAGE img;
+    bool is_mode_hierarchical; /* Jif contains a DHP marker segment before non-differential frame or frames. */
 } *pinfo;
 
 
@@ -44,7 +46,7 @@ pinfo j_dec_new(void) {
     return p;
 };
 
-bool j_dec_set_src_array(byte *src, jif_offset size, pinfo dinfo){
+bool j_dec_set_src_array(unsigned char *src, unsigned long long size, pinfo dinfo) {
     dinfo->src_arr = src;
     dinfo->src_size = size;
     dinfo->stat = J_DEC_SET_SRC;
@@ -57,25 +59,48 @@ bool j_dec_read_header(pinfo dinfo){
         return false;
     }
     JIF_SCANNER * scanner = jif_new_scanner(dinfo->src_arr, dinfo->src_size);
-    JIF_SCANNER * eoi_scanner;
-    jif_offset o, e;
+    JIF_SCANNER * frame_scanner;
     
-    /* scan whole file until we got header */
-    o = jif_scan_next_maker_of(M_SOI, scanner);
-    if(!jif_is_marker(scanner)){
-        err("no SOI");
-        return false;  /* no SOI found */
+    /* scan to SOI: start of image */
+    if( !jif_scan_next_maker_of(M_SOI, scanner) ){
+        return false;
     }
     
-    eoi_scanner = jif_copy_scanner(scanner);
-    e = jif_scan_next_maker_of(M_EOI, eoi_scanner);
-    if(!jif_is_marker(eoi_scanner)){
-        return false;  /* no EOI found */
+    /* scan to a frame segment, and get image size */
+    /* In case of hierarchical mode, there are multiple frames, scan all and take the biggest. */
+    frame_scanner = jif_copy_scanner(scanner);
+    while( jif_scan_next_marker(frame_scanner)) {
+        JIF_MARKER m = jif_get_current_marker(frame_scanner);
+        switch (m) {
+            case M_DHP:
+                dinfo->is_mode_hierarchical = true;
+                return false; /* TODO */
+                break;
+            case M_SOF0:    /* the only supported base line DCT (non-differential, Huffman coding) */
+                jif_read_frame_param(frame_scanner);
+                dinfo->img.width = frame_scanner->frame.X;
+                dinfo->img.height = frame_scanner->frame.Y;
+                dinfo->img.bits_per_component = frame_scanner->frame.P;
+                switch (frame_scanner->frame.Nf) {
+                    case 1:
+                        dinfo->img.color_space = J_COLOR_GRAY;
+                        break;
+                    case 3:
+                        dinfo->img.color_space = J_COLOR_RGB;   /* can output RGB */
+                        break;
+                    case 4:
+                        dinfo->img.color_space = J_COLOR_CMYK;
+                        break;
+                    default:
+                        break;
+                }
+                return true;
+            default:
+                break;
+        }
     }
     
-    /* process header */
-    
-    return true;
+    return false;
 };
 
 unsigned long j_info_get_width(pinfo dinfo){
@@ -94,4 +119,6 @@ bool j_dec_decode(pinfo dinfo);
 bool j_dec_is_success(pinfo dinfo);
 j_err j_info_get_error(pinfo dinfo);
 j_pixel_rgba * j_dec_get_image_rgba(pinfo dinfo);   /* pointer to pixel array */
-void j_dec_destroy(pinfo dinfo);
+void j_dec_destroy(pinfo dinfo){
+    free(dinfo);
+}

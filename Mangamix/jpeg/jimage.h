@@ -20,8 +20,8 @@ typedef enum {
 typedef unsigned int uint;
 
 typedef struct {
-    unsigned long int width;    /* jpeg usual size : 1 ~ 65535 */
-    unsigned long int height;
+    unsigned int width;    /* jpeg usual size : 1 ~ 65535 */
+    unsigned int height;
     J_COLOR_SPACE color_space;
     uint bits_per_pixel;
     uint bits_per_component;    /* TODO ? In decoded raw image, each component has same depth. */

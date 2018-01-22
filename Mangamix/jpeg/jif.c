@@ -10,72 +10,96 @@
 #include <stdlib.h>
 #include <stdbool.h>
 
-typedef struct jif_scanner {
-    byte * pjif;
-    jif_offset size;
-    jif_offset cur_m; /* current marker */
-    jif_offset old_m;
-} JIF_SCANNER;
-
-
-bool jif_is_marker(byte b) {
-    return (b != '\x00') && (b !='\xFF'); /* Note all byte in open range (0x00, 0xff) are possible markers */
+bool jif_is_marker_byte(byte b) {
+    return (0x00 < b) && (b < 0xFF); /* Note all byte in open range (0x00, 0xff) are possible markers */
 }
 
 
 /* if (return < to), found a marker */
 JIF_SCANNER * jif_new_scanner(byte * jif_array, jif_offset array_size){
-    JIF_SCANNER * pscanner = (JIF_SCANNER *)malloc(sizeof(JIF_SCANNER));
-    pscanner->pjif = jif_array;
-    pscanner->size = array_size;
-    pscanner->cur_m = 0;
-    pscanner->old_m = 0;
-    return pscanner;
-}
-
-
-JIF_SCANNER * jif_copy_scanner(JIF_SCANNER * pscanner){
     JIF_SCANNER * s = (JIF_SCANNER *)malloc(sizeof(JIF_SCANNER));
-    s->pjif = pscanner->pjif;
-    s->size = pscanner->size;
-    s->cur_m = pscanner->cur_m;
-    s->old_m = pscanner->old_m;
+    s->pjif = jif_array;
+    s->size = array_size;
+    s->m = 0;
+    s->i = 0;
     return s;
 }
 
-void jif_del_scanner(JIF_SCANNER * pscanner){
-    free(pscanner);
+
+JIF_SCANNER * jif_copy_scanner(JIF_SCANNER * s){
+    JIF_SCANNER * news = (JIF_SCANNER *)malloc(sizeof(JIF_SCANNER));
+    news->pjif = s->pjif;
+    news->size = s->size;
+    news->m = s->m;
+    news->i = s->i;
+    return news;
 }
 
-bool jif_scan_next_marker(JIF_SCANNER * scanner){
-    jif_offset f;  /* will point to \xff */
-    byte* p = scanner->pjif;    /* helper for shorter code */
+void jif_del_scanner(JIF_SCANNER * s){
+    free(s);
+}
+
+bool jif_scan_next_marker(JIF_SCANNER * s){
+    byte* p = s->pjif;    /* helper for shorter code */
     
-    /* sacn for marker. \xFF is fewer in data, scan for it, then judge the rest. */
-    for(f = scanner->cur_m ; f < (scanner->size -1); f++) {
-        if( p[f] == '\xFF' && jif_is_marker(p[f+1])) {
-            scanner->old_m = scanner->cur_m;    /* hold current index */
-            scanner->cur_m = f+1;
+    for(; s->i < (s->size -1); s->i++) {
+        if( (p[s->i] == 0xFF) && jif_is_marker_byte(p[s->i+1]) ) {   /* find a marker */
+            s->m = ++s->i;
             return true;
         }
     }
     return false;
 }
 
-bool jif_scan_next_maker_of(JIF_MARKER e_marker, JIF_SCANNER * scanner ){
+bool jif_scan_next_maker_of(JIF_MARKER m, JIF_SCANNER * s ){
     
-    while ( (scanner->cur_m < scanner->size) && jif_is_marker(scanner->cur_m) ){
-           if (e_marker == jif_get_current_marker(scanner)){
-               return true;
-           } else {
-               jif_scan_next_marker(scanner);
-           }
+    while ( jif_scan_next_marker(s) ){
+        if (m == jif_get_current_marker(s)){
+            return true;
+        }
     }
     return false;
 }
 
-JIF_MARKER jif_get_current_marker(JIF_SCANNER * scanner){
-    return scanner->pjif[scanner->cur_m];
+
+byte jif_scan_next_byte(JIF_SCANNER * s){
+    return s->pjif[++s->i];
+}
+
+bool jif_read_frame_param(JIF_SCANNER * s) {
+    int c;
+    byte b;
+    JIF_MARKER m = jif_get_current_marker(s);
+    switch (m) {
+        case M_SOF0:
+        case M_SOF1:
+        case M_SOF2:
+        case M_SOF3:
+        case M_SOF9:
+        case M_SOF10:
+        case M_SOF11:
+            s->frame.Lf = (jif_scan_next_byte(s) << 8) + jif_scan_next_byte(s);
+            s->frame.P = jif_scan_next_byte(s);
+            s->frame.Y = (jif_scan_next_byte(s) << 8) + jif_scan_next_byte(s);
+            s->frame.X = (jif_scan_next_byte(s) << 8) + jif_scan_next_byte(s);
+            s->frame.Nf = jif_scan_next_byte(s);
+            for(c = 0; c < s->frame.Nf; c++){
+                s->frame.comps[c].C = jif_scan_next_byte(s);
+                b = jif_scan_next_byte(s);
+                s->frame.comps[c].H = ( b >> 4 );
+                s->frame.comps[c].V = ( 0x0f & b );
+                s->frame.comps[c].Tq = jif_scan_next_byte(s);
+            }
+            break;
+            
+        default:
+            break;
+    }
+    return true;
+}
+
+JIF_MARKER jif_get_current_marker(JIF_SCANNER * s){
+    return s->pjif[s->m];
 }
 
 

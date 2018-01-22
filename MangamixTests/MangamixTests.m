@@ -11,6 +11,7 @@
 #import <ImageIO/ImageIO.h>
 
 #include "jpegdec.h"
+#include "jif.h"
 
 @interface MangamixTests : XCTestCase
 
@@ -26,6 +27,13 @@
 - (void)tearDown {
     // Put teardown code here. This method is called after the invocation of each test method in the class.
     [super tearDown];
+}
+
+- (void) testMarkerJudge {
+    XCTAssert(jif_is_marker_byte('\xd8'));
+    XCTAssert(!jif_is_marker_byte('\x00'));
+    XCTAssert(!jif_is_marker_byte('\xFF'));
+    XCTAssert(!jif_is_marker_byte('\xff'));
 }
 
 - (void) testJpegReadHeader {
@@ -58,13 +66,17 @@
         
         // test : decode jpeg header
         pinfo p = j_dec_new();
-        j_dec_set_src_array((byte*)[fileData bytes], fileSize, p);
+        
+        j_dec_set_src_array((unsigned char*)[fileData bytes], fileSize, p);
         if(j_dec_read_header(p)){
             NSLog(@"width %ld, height %ld", j_info_get_width(p), j_info_get_height(p) );
         }
         XCTAssert(j_dec_read_header(p));
         XCTAssert(32 == j_info_get_width(p));
         XCTAssert(30 == j_info_get_height(p));
+        
+        // release
+        j_dec_destroy(p);
     }
     
 }

@@ -53,8 +53,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "jif.h"
-#include "jimage.h"
+#include "jimage.h"     /* out side decoder scope */
 
 typedef struct J_DEC_INFO *pinfo;
 typedef enum J_ERR j_err;
@@ -62,7 +61,7 @@ typedef struct J_PIXEL_RGBA j_pixel_rgba;
 
 
 pinfo j_dec_new(void);
-bool j_dec_set_src_array(byte *src, jif_offset size, pinfo dinfo);
+bool j_dec_set_src_array(unsigned char *src, unsigned long long size, pinfo dinfo);
 bool j_dec_read_header(pinfo dinfo);
 
 unsigned long j_info_get_width(pinfo dinfo);
