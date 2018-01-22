@@ -9,6 +9,7 @@
 #include "jif.h"
 #include <stdlib.h>
 #include <stdbool.h>
+#include <string.h> /* memcpy() */
 
 bool jif_is_marker_byte(byte b) {
     return (0x00 < b) && (b < 0xFF); /* Note all byte in open range (0x00, 0xff) are possible markers */
@@ -28,10 +29,7 @@ JIF_SCANNER * jif_new_scanner(byte * jif_array, jif_offset array_size){
 
 JIF_SCANNER * jif_copy_scanner(JIF_SCANNER * s){
     JIF_SCANNER * news = (JIF_SCANNER *)malloc(sizeof(JIF_SCANNER));
-    news->pjif = s->pjif;
-    news->size = s->size;
-    news->m = s->m;
-    news->i = s->i;
+    memcpy(news, s, sizeof(JIF_SCANNER));
     return news;
 }
 

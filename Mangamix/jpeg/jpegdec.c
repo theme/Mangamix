@@ -123,10 +123,13 @@ int j_info_get_num_of_components(pinfo dinfo){
     return dinfo->img.num_of_components;
 }
 int j_info_get_component_depth(int comp_i, pinfo dinfo){
-    return dinfo->img.bits_per_component;    /* TODO */
+    return dinfo->img.bits_per_component;    /* TODO : "a decoder with appropriate accuracy" */
 }
 
-bool j_dec_decode(pinfo dinfo);
+bool j_dec_decode(pinfo dinfo){
+    return false;
+}
+
 bool j_dec_is_success(pinfo dinfo);
 j_err j_info_get_error(pinfo dinfo);
 j_pixel_rgba * j_dec_get_image_rgba(pinfo dinfo);   /* pointer to pixel array */
