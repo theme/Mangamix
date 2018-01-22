@@ -58,29 +58,27 @@ bool j_dec_read_header(pinfo dinfo){
     if( 0 == dinfo->src_arr ) {
         return false;
     }
-    JIF_SCANNER * scanner = jif_new_scanner(dinfo->src_arr, dinfo->src_size);
-    JIF_SCANNER * frame_scanner;
+    JIF_SCANNER * s = jif_new_scanner(dinfo->src_arr, dinfo->src_size);
     
     /* scan to SOI: start of image */
-    if( !jif_scan_next_maker_of(M_SOI, scanner) ){
+    if( !jif_scan_next_maker_of(M_SOI, s) ){
         return false;
     }
     
     /* scan to a frame segment, and get image size */
     /* In case of hierarchical mode, there are multiple frames, scan all and take the biggest. */
-    frame_scanner = jif_copy_scanner(scanner);
-    while( jif_scan_next_marker(frame_scanner)) {
-        JIF_MARKER m = jif_get_current_marker(frame_scanner);
+    while( jif_scan_next_marker(s)) {
+        JIF_MARKER m = jif_get_current_marker(s);
         switch (m) {
             case M_DHP:
                 dinfo->is_mode_hierarchical = true;
                 return false; /* TODO */
                 break;
             case M_SOF0:    /* the only supported base line DCT (non-differential, Huffman coding) */
-                jif_read_frame_param(frame_scanner);
-                dinfo->img.width = frame_scanner->frame.X;
-                dinfo->img.height = frame_scanner->frame.Y;
-                switch (frame_scanner->frame.Nf) {
+                jif_read_frame_param(s);
+                dinfo->img.width = s->frame.X;
+                dinfo->img.height = s->frame.Y;
+                switch (s->frame.Nf) {
                     case 1:
                         dinfo->img.color_space = J_COLOR_GRAY;
                         dinfo->img.num_of_components = 1;
@@ -96,7 +94,7 @@ bool j_dec_read_header(pinfo dinfo){
                     default:
                         break;
                 }
-                dinfo->img.bits_per_component = frame_scanner->frame.P; // TODO ?
+                dinfo->img.bits_per_component = s->frame.P; // TODO ?
                 dinfo->img.bits_per_pixel = dinfo->img.bits_per_component * dinfo->img.num_of_components;
                 return true;
             default:
