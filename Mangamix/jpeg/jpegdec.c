@@ -80,20 +80,24 @@ bool j_dec_read_header(pinfo dinfo){
                 jif_read_frame_param(frame_scanner);
                 dinfo->img.width = frame_scanner->frame.X;
                 dinfo->img.height = frame_scanner->frame.Y;
-                dinfo->img.bits_per_component = frame_scanner->frame.P;
                 switch (frame_scanner->frame.Nf) {
                     case 1:
                         dinfo->img.color_space = J_COLOR_GRAY;
+                        dinfo->img.num_of_components = 1;
                         break;
                     case 3:
-                        dinfo->img.color_space = J_COLOR_RGB;   /* can output RGB */
+                        dinfo->img.color_space = J_COLOR_RGB;   /* output RGB */
+                        dinfo->img.num_of_components = 3;
                         break;
                     case 4:
                         dinfo->img.color_space = J_COLOR_CMYK;
+                        dinfo->img.num_of_components = 4;
                         break;
                     default:
                         break;
                 }
+                dinfo->img.bits_per_component = frame_scanner->frame.P; // TODO ?
+                dinfo->img.bits_per_pixel = dinfo->img.bits_per_component * dinfo->img.num_of_components;
                 return true;
             default:
                 break;
@@ -109,11 +113,18 @@ unsigned long j_info_get_width(pinfo dinfo){
 
 unsigned long j_info_get_height(pinfo dinfo){
     return dinfo->img.height;
-    
 };
-J_COLOR_SPACE j_info_get_colorspace(pinfo dinfo);
-int j_info_get_num_of_components(pinfo dinfo);
-int j_info_get_component_depth(int comp_i, pinfo dinfo);    /* depth of i th component */
+
+J_COLOR_SPACE j_info_get_colorspace(pinfo dinfo){
+    return dinfo->img.color_space;
+}
+
+int j_info_get_num_of_components(pinfo dinfo){
+    return dinfo->img.num_of_components;
+}
+int j_info_get_component_depth(int comp_i, pinfo dinfo){
+    return dinfo->img.bits_per_component;    /* TODO */
+}
 
 bool j_dec_decode(pinfo dinfo);
 bool j_dec_is_success(pinfo dinfo);

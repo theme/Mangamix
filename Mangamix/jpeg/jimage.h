@@ -22,6 +22,7 @@ typedef unsigned int uint;
 typedef struct {
     unsigned int width;    /* jpeg usual size : 1 ~ 65535 */
     unsigned int height;
+    unsigned int num_of_components;
     J_COLOR_SPACE color_space;
     uint bits_per_pixel;
     uint bits_per_component;    /* TODO ? In decoded raw image, each component has same depth. */
