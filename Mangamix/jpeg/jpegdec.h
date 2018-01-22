@@ -53,12 +53,18 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "jimage.h"     /* out side decoder scope */
-
 typedef struct J_DEC_INFO *pinfo;
-typedef enum J_ERR j_err;
-typedef struct J_PIXEL_RGBA j_pixel_rgba;
 
+typedef enum {
+    ERR_MALLOC,  /* not enough memory */
+    ERR_UNKNOWN
+} J_ERR;
+
+typedef enum {
+    J_COLOR_GRAY,
+    J_COLOR_RGB,
+    J_COLOR_CMYK
+} J_COLOR_SPACE;    // TODO ?
 
 pinfo j_dec_new(void);
 bool j_dec_set_src_array(unsigned char *src, unsigned long long size, pinfo dinfo);
@@ -70,10 +76,9 @@ J_COLOR_SPACE j_info_get_colorspace(pinfo dinfo);
 int j_info_get_num_of_components(pinfo dinfo);
 int j_info_get_component_depth(int comp_i, pinfo dinfo);    /* depth of i th component */
 
-bool j_dec_decode(pinfo dinfo);
+bool j_dec_decode_frames(pinfo dinfo);
 bool j_dec_is_success(pinfo dinfo);
-j_err j_info_get_error(pinfo dinfo);
-j_pixel_rgba * j_dec_get_image_rgba(pinfo dinfo);   /* pointer to pixel array */
+J_ERR j_info_get_error(pinfo dinfo);
 void j_dec_destroy(pinfo dinfo);
 
 

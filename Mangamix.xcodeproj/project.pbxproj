@@ -24,6 +24,8 @@
 		A5F71D3B1F83D11B00B045C9 /* MangamixUITests.m in Sources */ = {isa = PBXBuildFile; fileRef = A5F71D3A1F83D11B00B045C9 /* MangamixUITests.m */; };
 		A5FFC1F72012B27700A4A9CD /* baseline-optimized-ps.jpg in Resources */ = {isa = PBXBuildFile; fileRef = A5FFC1F52012B27700A4A9CD /* baseline-optimized-ps.jpg */; settings = {ASSET_TAGS = ("sample jpg", ); }; };
 		A5FFC1F82012B27700A4A9CD /* baseline-standard.jpg in Resources */ = {isa = PBXBuildFile; fileRef = A5FFC1F62012B27700A4A9CD /* baseline-standard.jpg */; settings = {ASSET_TAGS = ("sample jpg", ); }; };
+		A5FFC2032015B2BA00A4A9CD /* jframe.c in Sources */ = {isa = PBXBuildFile; fileRef = A5FFC2022015B2BA00A4A9CD /* jframe.c */; };
+		A5FFC2042015B2BA00A4A9CD /* jframe.c in Sources */ = {isa = PBXBuildFile; fileRef = A5FFC2022015B2BA00A4A9CD /* jframe.c */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -46,7 +48,6 @@
 /* Begin PBXFileReference section */
 		A5500B201FF50D3400F5A216 /* jpegdec.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = jpegdec.h; sourceTree = "<group>"; };
 		A5500B211FF50D3400F5A216 /* jpegdec.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = jpegdec.c; sourceTree = "<group>"; };
-		A557EABC2004065C00893FDC /* jimage.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = jimage.h; sourceTree = "<group>"; };
 		A557EABD2004065C00893FDC /* jif.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = jif.h; sourceTree = "<group>"; };
 		A59E93471FEE5778004A9F48 /* JifDecoder.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = JifDecoder.h; sourceTree = "<group>"; };
 		A59E93481FEE5778004A9F48 /* JifDecoder.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = JifDecoder.m; sourceTree = "<group>"; };
@@ -70,6 +71,8 @@
 		A5F71D3C1F83D11B00B045C9 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		A5FFC1F52012B27700A4A9CD /* baseline-optimized-ps.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = "baseline-optimized-ps.jpg"; sourceTree = "<group>"; };
 		A5FFC1F62012B27700A4A9CD /* baseline-standard.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = "baseline-standard.jpg"; sourceTree = "<group>"; };
+		A5FFC2012015B2BA00A4A9CD /* jframe.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = jframe.h; sourceTree = "<group>"; };
+		A5FFC2022015B2BA00A4A9CD /* jframe.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = jframe.c; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -104,11 +107,12 @@
 			children = (
 				A557EABD2004065C00893FDC /* jif.h */,
 				A5B8C0B120117109002A3E0D /* jif.c */,
-				A557EABC2004065C00893FDC /* jimage.h */,
-				A59E93471FEE5778004A9F48 /* JifDecoder.h */,
-				A59E93481FEE5778004A9F48 /* JifDecoder.m */,
+				A5FFC2012015B2BA00A4A9CD /* jframe.h */,
+				A5FFC2022015B2BA00A4A9CD /* jframe.c */,
 				A5500B201FF50D3400F5A216 /* jpegdec.h */,
 				A5500B211FF50D3400F5A216 /* jpegdec.c */,
+				A59E93471FEE5778004A9F48 /* JifDecoder.h */,
+				A59E93481FEE5778004A9F48 /* JifDecoder.m */,
 			);
 			path = jpeg;
 			sourceTree = "<group>";
@@ -329,6 +333,7 @@
 				A5F71D251F83D11B00B045C9 /* main.m in Sources */,
 				A5B8C0B220117109002A3E0D /* jif.c in Sources */,
 				A59E93491FEE5778004A9F48 /* JifDecoder.m in Sources */,
+				A5FFC2032015B2BA00A4A9CD /* jframe.c in Sources */,
 				A5F71D1A1F83D11B00B045C9 /* AppDelegate.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -339,6 +344,7 @@
 			files = (
 				A5500B231FF50D3400F5A216 /* jpegdec.c in Sources */,
 				A59E934A1FEE5778004A9F48 /* JifDecoder.m in Sources */,
+				A5FFC2042015B2BA00A4A9CD /* jframe.c in Sources */,
 				A5F71D301F83D11B00B045C9 /* MangamixTests.m in Sources */,
 				A5B8C0B320117109002A3E0D /* jif.c in Sources */,
 			);

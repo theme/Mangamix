@@ -12,16 +12,11 @@
 
 #include <stdio.h>
 #include <stdbool.h>
+#include <stdint.h>
 
 typedef unsigned char byte;
 
 typedef unsigned long long jif_offset;  /* offset in side array of target file */
-
-/* JIF marker code assignment (mm in 0xFFmm)*/
-/* Note:
- * all byte in open range (0x00, 0xff) are possible markers,
- * this is used by jif_is_marker_byte(byte b);
- */
 
 typedef enum {
     /* Other markers */
@@ -99,42 +94,15 @@ typedef enum {
     M_JPG11 = 0xfb, /* Reserved for JPEG extensions */
     M_JPG12 = 0xfc, /* Reserved for JPEG extensions */
     M_JPG13 = 0xfd, /* Reserved for JPEG extensions */
-    M_COM = 0xfe, /* Comment */
+    M_COM = 0xfe /* Comment */
     
 } JIF_MARKER;
-
-typedef struct {
-    unsigned Pq;    /* 0 ~ 1 : Quantization table element precision. */
-    unsigned Tq;    /* Quantization table destination id */
-    unsigned Q
-} J_QUANT_TABLE;
-
-typedef struct {
-    unsigned Lq;    /* length of DQT table definition bytes */
-} J_DQT_PARAM;
-
-typedef struct {
-    unsigned C;    /* Component identifier */
-    unsigned H;     /* 1 ~ 4, Horizontal sampling factor: (component horizontal dimension) / X */
-    unsigned V;     /* 1 ~ 4, Vertical sampling factor: (component vertical dimension) / Y */
-    unsigned Tq;    /* Quantization table destination selector */
-} J_FRAME_COMP;
-
-typedef struct {
-    unsigned Lf;    /* Frame header length */
-    unsigned P;     /* Sample precision */
-    unsigned Y;     /* max Number of lines in the source image */
-    unsigned X;     /* max Number of samples per line */
-    unsigned Nf;    /* Number of image components in frame (1: gray, 3:YCbCr|YIQ, 4:CMYK) */
-    J_FRAME_COMP comps[4];     /* pointer to array of SOF_COMP */
-} J_FRAME_PARAM;
 
 typedef struct jif_scanner {
     byte * pjif;
     jif_offset size;
     jif_offset i;   /* scanner cursor */
     jif_offset m; /* last marker */
-    J_FRAME_PARAM frame;
 } JIF_SCANNER;
 
 JIF_SCANNER * jif_new_scanner(byte * jif_array, jif_offset array_size);
@@ -142,16 +110,13 @@ JIF_SCANNER * jif_copy_scanner(JIF_SCANNER *);
 void jif_del_scanner(JIF_SCANNER * );
 
 bool jif_is_marker_byte(byte b);
+
 bool jif_scan_next_marker(JIF_SCANNER * );
 JIF_MARKER jif_get_current_marker(JIF_SCANNER * s);
 bool jif_scan_next_maker_of(JIF_MARKER e_marker, JIF_SCANNER * s );
 
 byte jif_scan_next_byte(JIF_SCANNER * s);
 
-bool jif_read_quat_table_spec(JIF_SCANNER * s);     /* M_DQT */
-bool jif_is_sof_marker(JIF_MARKER m);
-bool jif_read_sof_param(JIF_SCANNER * s);   /* if current marker is sof */
-
-
 
 #endif /* jif_h */
+
