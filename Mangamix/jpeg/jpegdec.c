@@ -11,6 +11,7 @@
 /* inside decoder scope */
 #include "jif.h"
 #include "jframe.h"
+#include "exif.h"
 
 #define err(S) fprintf(stderr, S)
 #define logger(S) printf(S)
@@ -82,18 +83,18 @@ bool j_dec_set_src_array(unsigned char *src, unsigned long long size, pinfo dinf
 bool dec_read_a_tbl_misc(pinfo dinfo, JIF_SCANNER *s){
     JIF_MARKER m = jif_get_current_marker(s);
     printf("%x @%llu\n", m, jif_get_offset(s));
-    
+
     switch (m) {
         case M_DQT:
             printf("%x @%llu DQT\n", m, jif_get_offset(s));
         {   uint16_t Lq = jif_scan_2_bytes(s);
             uint16_t offset = 2;
-            
+
             byte b = jif_scan_next_byte(s);
             offset++;
             uint8_t Pq = ( b & 0xF0 )  >> 4 ;
             uint8_t Tq = b & 0x0F;
-            
+
             dinfo->qtables[Tq].precison = ( 0 == Pq ) ? 8 : 16;
             while (offset < Lq) {
                 for (int i = 0 ; i < 64 ; i++){
@@ -113,27 +114,27 @@ bool dec_read_a_tbl_misc(pinfo dinfo, JIF_SCANNER *s){
         case M_DHT:
             printf("%x @%llu DHT\n", m, jif_get_offset(s));
         {   uint16_t Lh = jif_scan_2_bytes(s); uint16_t offset = 2;
-            
+
             byte b = jif_scan_next_byte(s); offset++;
         }
             break;
         case M_DAC:
             printf("%x @%llu DAC\n", m, jif_get_offset(s));
-            
+
             break;
         case M_DRI:
             printf("%x @%llu DRI\n", m, jif_get_offset(s));
-            
+
             break;
         case M_COM:
             printf("%x @%llu COMMENT\n", m, jif_get_offset(s));
-            
+
             break;
         case M_APP0:    /* JFIF versions >= 1.02 : embed a thumbnail image in 3 different formats. */
             printf("%x @%llu APP0 - JFIF\n", m, jif_get_offset(s));
-            
+
             break;
-            
+
         case M_APP1:    /* Exif Attribute Information | XMP */
             printf("%x @%llu APP1 - Exif | XMP\n", m, jif_get_offset(s));
         {   /* try Exif */
@@ -147,7 +148,14 @@ bool dec_read_a_tbl_misc(pinfo dinfo, JIF_SCANNER *s){
                 && 0x00 == jif_scan_next_byte(s) ){
                 offset += 6;
                 logger("> Exif\n");
-                
+
+                /* Attribute information in 2 IFDs (0th IFD, 1st IFD)
+                 following the TIFF structure, including the File Header.
+                 1st IFD contains thumbnails of jpeg.
+                 */
+
+                /* TIFF header (8 bytes) : byte order , Offset to 0th IFD from start of Byte Order. */
+                uint16_t tiff_header_pos = offset;
                 uint16_t byte_order = jif_scan_2_bytes(s); offset += 2;
                 if( 0x4949 == byte_order ) {    /* little endian */
                     logger("> \x49\x49 little ending\n");
@@ -156,24 +164,23 @@ bool dec_read_a_tbl_misc(pinfo dinfo, JIF_SCANNER *s){
                 }
                 uint16_t byte_42 = jif_scan_2_bytes(s); offset += 2;
                 if ( 0x002A != byte_42 ) {
-                    printf(">   error reading Exif header at 0x0042.%xx\n", byte_42);
+                    printf(">   error Exif/Tiff header : 0x0042.%xx\n", byte_42);
                 }
                 uint32_t IFD_offset =  jif_scan_4_bytes(s); offset += 4;
                 printf("> IFD offset %d\n", IFD_offset);
                 for(int i = 0 ; i < IFD_offset - 8; i++){   /* scan to IFD */
                     jif_scan_next_byte(s); offset++;
                 }
-                
-                break;
-                
+
                 while(offset < filed_len){      /* read IFD */
-                    uint16_t num_fields = jif_scan_2_bytes(s); offset +=2;
-                    uint16_t tag = jif_scan_2_bytes(s); offset +=2;     /* IFD0 and IFD1 tag are the same as in TIFF */
-                    uint16_t type = jif_scan_2_bytes(s); offset +=2;
-                    uint32_t count = jif_scan_4_bytes(s); offset +=4;
-                    uint32_t voffset = jif_scan_4_bytes(s); offset +=4;
-                    uint32_t next_IFD_offset = jif_scan_4_bytes(s); offset +=4;
-                    switch (tag) {
+                    tiff_ifd_t ifd0;
+                    ifd0.num_fields = jif_scan_2_bytes(s); offset +=2;
+                    ifd0.tag = jif_scan_2_bytes(s); offset +=2;     /* IFD0 and IFD1 tag are the same as in TIFF */
+                    ifd0.type = jif_scan_2_bytes(s); offset +=2;
+                    ifd0.count = jif_scan_4_bytes(s); offset +=4;
+                    ifd0.value_offset = jif_scan_4_bytes(s); offset +=4;    /* from tiff header position */
+                    ifd0.next_IFD_offset = jif_scan_4_bytes(s); offset +=4;
+                    switch (ifd0.tag) {
                         case 34665:
                             /* Exif IFD Pointer */
                             break;
@@ -183,17 +190,18 @@ bool dec_read_a_tbl_misc(pinfo dinfo, JIF_SCANNER *s){
                         case 40965:
                             /* Interoperability IFD Pointer */
                             break;
-                            
+
                         default:
                             break;
                     }
-                    /* TODO - now skip through IFD contents */
-                    for(int i = 0 ; i < next_IFD_offset && offset < filed_len; i++){
-                        jif_scan_next_byte(s); offset++;
-                    }
+                }
+
+                /* TODO (now skipping..) IFD contents */
+                for(;offset < filed_len; offset++){
+                    jif_scan_next_byte(s);
                 }
             }
-            
+
         }
             break;
         case M_APP2:    /* ICC */
@@ -218,7 +226,7 @@ bool dec_read_a_tbl_misc(pinfo dinfo, JIF_SCANNER *s){
             printf("%x @%llu NOT a table | misc marker.\n", m, jif_get_offset(s));
             return false;       /* NOT a tables | misc marker. */
     } /* end switch */
-    
+
     return true;                /* IS a tables | misc marker. */
 }
 
@@ -269,7 +277,7 @@ bool dec_read_sof_param(pinfo dinfo, JIF_SCANNER * s){
 /* private: try read one sof marker. */
 bool dec_read_all_current_tables_misc(pinfo dinfo, JIF_SCANNER * s){
     bool success = false;
-    
+
     while( jif_scan_next_marker(s) ){
         if(dec_read_a_tbl_misc(dinfo, s)){
             success = true;
@@ -277,7 +285,7 @@ bool dec_read_all_current_tables_misc(pinfo dinfo, JIF_SCANNER * s){
             break;
         }
     }
-    
+
     return success;
 }
 
@@ -285,14 +293,14 @@ bool dec_read_all_current_tables_misc(pinfo dinfo, JIF_SCANNER * s){
 bool dec_prob_read_a_sof_param(pinfo dinfo, JIF_SCANNER * s){
     JIF_SCANNER * sof_s = jif_copy_scanner(s);  /* new */
     bool success = false;
-    
+
     while( jif_scan_next_marker(sof_s) ){
         if(dec_read_sof_param(dinfo, sof_s)){
             success = true;
             break;
         }
     }
-    
+
     jif_del_scanner(sof_s);                     /* del */
     return success;
 }
@@ -300,17 +308,17 @@ bool dec_prob_read_a_sof_param(pinfo dinfo, JIF_SCANNER * s){
 /* private: read a scan in frame. ( possible more than one scan in a frame) */
 bool dec_scans(pinfo dinfo, JIF_SCANNER * s) {
     JIF_MARKER m;
-    
+
     while ( jif_scan_next_marker(s) ){
         m = jif_get_current_marker(s);
         printf("%x << dec_scans()\n", m);
         /* TODO */
-        
+
         if ( M_EOI == m) {
             return true;
         }
     }
-    
+
     return true;   /* should have read a sof param and returned. */
 };
 
@@ -319,30 +327,30 @@ bool j_dec_read_header(pinfo dinfo){
     if( 0 == dinfo->src ) {
         return false;
     }
-    
+
     JIF_SCANNER *s = jif_new_scanner(dinfo->src, dinfo->src_size);
-    
+
     if( !jif_scan_next_maker_of(M_SOI, s) ){
         err("> Error no image (SOI marker).");
         goto ertn;
     }
-    
+
     dinfo->stat = J_DEC_HEADER; /* status : after SOI, reading header */
-    
+
     if (!dec_read_all_current_tables_misc(dinfo, s)){
         err("> Error reading tables|misc." );
         goto ertn;
     }
-    
+
     /* here scanner pointing to marker AFTER some continuous tables|misc. */
-    
+
     if (!dec_prob_read_a_sof_param(dinfo, s)){  /* to get image size, color ... */
         goto ertn;
     }
-    
+
     jif_del_scanner(s);
     return true;
-    
+
 ertn:
     jif_del_scanner(s);
     return false;
@@ -369,7 +377,7 @@ int j_info_get_component_depth(int comp_i, pinfo dinfo){
 
 bool j_dec_decode_frames(pinfo dinfo){
     dinfo->stat = J_DEC_FRAMES;
-    
+
     return false;
 }
 

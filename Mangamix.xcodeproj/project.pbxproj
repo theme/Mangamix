@@ -57,6 +57,7 @@
 		A5B8C0B120117109002A3E0D /* jif.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = jif.c; sourceTree = "<group>"; };
 		A5E9226B2016E7BE00740CDB /* jscan.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = jscan.h; sourceTree = "<group>"; };
 		A5E9226C2016E7BE00740CDB /* jscan.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = jscan.c; sourceTree = "<group>"; };
+		A5E922702017E19400740CDB /* exif.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = exif.h; sourceTree = "<group>"; };
 		A5F71D151F83D11B00B045C9 /* Mangamix.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Mangamix.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A5F71D181F83D11B00B045C9 /* AppDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AppDelegate.h; sourceTree = "<group>"; };
 		A5F71D191F83D11B00B045C9 /* AppDelegate.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = AppDelegate.m; sourceTree = "<group>"; };
@@ -115,6 +116,7 @@
 				A5FFC2022015B2BA00A4A9CD /* jframe.c */,
 				A5E9226B2016E7BE00740CDB /* jscan.h */,
 				A5E9226C2016E7BE00740CDB /* jscan.c */,
+				A5E922702017E19400740CDB /* exif.h */,
 				A5500B201FF50D3400F5A216 /* jpegdec.h */,
 				A5500B211FF50D3400F5A216 /* jpegdec.c */,
 				A59E93471FEE5778004A9F48 /* JifDecoder.h */,
