@@ -13,6 +13,7 @@
 #include "jframe.h"
 
 #define err(S) fprintf(stderr, S)
+#define logger(S) printf(S)
 
 /* DCT tables */
 #define DCTSIZE     64
@@ -25,6 +26,12 @@ typedef struct QUANT_TABLE {
     uint8_t     precison;   /* 8 | 16 */
     qtbl_arr    coeff_a;      /* DCT coeff array in zig-zag order */
 } J_QTABLE;
+
+/* Huffman tables */
+typedef struct {
+    byte    BITS[16];
+    uint8_t     HUFFVAL[16];
+} J_HUFF_TBL;
 
 typedef enum {
     J_DEC_NEW,
@@ -65,21 +72,23 @@ bool j_dec_set_src_array(unsigned char *src, unsigned long long size, pinfo dinf
     dinfo->src = src;
     dinfo->src_size = size;
     dinfo->stat = J_DEC_SET_SRC;
+    
+    JIF_SCANNER * s = jif_new_scanner(dinfo->src, dinfo->src_size);
+    dinfo->jif_scanner = s;
     return true;
 };
 
 /* scan to jif header, read image meta data into dinfo */
 bool j_dec_read_header(pinfo dinfo){
     JIF_MARKER m;
-    J_FRAME f;
     
     dinfo->stat = J_DEC_HEADER;
     
     if( 0 == dinfo->src ) {
         return false;
     }
-    JIF_SCANNER * s = jif_new_scanner(dinfo->src, dinfo->src_size);
-    dinfo->jif_scanner = s;
+    
+    JIF_SCANNER * s = dinfo->jif_scanner;
     
     /* scan to SOI: start of image */
     if( !jif_scan_next_maker_of(M_SOI, s) ){
@@ -91,16 +100,24 @@ bool j_dec_read_header(pinfo dinfo){
     
     while ( jif_scan_next_marker(s) ){
         m = jif_get_current_marker(s);
+        printf("%x\n", m);
         switch (m) {
             /* interpret Table spec and misc (APP, COMMENT ... ) */
             case M_DHT:
+                logger("DHT\n");
+            {   uint16_t Lh = jif_scan_2_bytes(s); uint16_t offset = 2;
+                
+                byte b = jif_scan_next_byte(s); offset++;
+            }
                 
                 break;
             case M_DAC:
+                logger("DAC\n");
                 
                 break;
             case M_DQT:
-            {   uint16_t Lq = (jif_scan_next_byte(s) << 8) + jif_scan_next_byte(s);
+                logger("DQT\n");
+            {   uint16_t Lq = jif_scan_2_bytes(s);
                 uint16_t offset = 2;
                 
                 byte b = jif_scan_next_byte(s);
@@ -116,7 +133,7 @@ bool j_dec_read_header(pinfo dinfo){
                             offset++;
                             dinfo->qtables[Tq].coeff_a.Q8[i] = c;
                         } else /* 1 == Pq */ {
-                            uint16_t c = (jif_scan_next_byte(s) << 8) + jif_scan_next_byte(s);
+                            uint16_t c = jif_scan_2_bytes(s);
                             offset += 2;
                             dinfo->qtables[Tq].coeff_a.Q16[i] = c;
                         }
@@ -126,25 +143,86 @@ bool j_dec_read_header(pinfo dinfo){
                 
             }
             case M_DRI:
+                logger("DRI \n");
                 
                 break;
             case M_APP0:    /* JFIF versions >= 1.02 : embed a thumbnail image in 3 different formats. */
+                logger("APP0 JFIF\n");
                 
                 break;
                 
             case M_APP1:    /* Exif Attribute Information | XMP */
+                logger("APP1 Exif | XMP\n");
+            {   /* try Exif */
+                uint16_t filed_len = jif_scan_2_bytes(s);
+                uint16_t offset = 2;
+                if ('E' == jif_scan_next_byte(s)
+                    && 'x' == jif_scan_next_byte(s)
+                    && 'i' == jif_scan_next_byte(s)
+                    && 'f' == jif_scan_next_byte(s)
+                    && 0x00 == jif_scan_next_byte(s)
+                    && 0x00 == jif_scan_next_byte(s) ){
+                    offset += 6;
+                    logger("Exif ");
+                    
+                    uint16_t byte_order = jif_scan_2_bytes(s); offset += 2;
+                    if( 0x4949 == byte_order ) {    /* little endian */
+                        logger("\x49\x49 little ending\n");
+                    } else if ( 0x4d4d == byte_order ) {    /* big endian */
+                        logger("\x4d\x4d big ending\n");
+                    }
+                    uint16_t byte_42 = jif_scan_2_bytes(s); offset += 2;
+                    if ( 0x002A != byte_42 ) {
+                        printf("   error reading Exif header at 0x0042.%xx\n", byte_42);
+                    }
+                    uint32_t IFD_offset =  jif_scan_4_bytes(s); offset += 4;
+                    printf("IFD offset %d\n", IFD_offset);
+                    for(int i = 0 ; i < IFD_offset - 8; i++){   /* scan to IFD */
+                        jif_scan_next_byte(s); offset++;
+                    }
+                    while(offset < filed_len){      /* read IFD */
+                        uint16_t num_fields = jif_scan_2_bytes(s); offset +=2;
+                        uint16_t tag = jif_scan_2_bytes(s); offset +=2;     /* IFD0 and IFD1 tag are the same as in TIFF */
+                        uint16_t type = jif_scan_2_bytes(s); offset +=2;
+                        uint32_t count = jif_scan_4_bytes(s); offset +=4;
+                        uint32_t voffset = jif_scan_4_bytes(s); offset +=4;
+                        uint32_t next_IFD_offset = jif_scan_4_bytes(s); offset +=4;
+                        switch (tag) {
+                            case 34665:
+                                /* Exif IFD Pointer */
+                                break;
+                            case 34853:
+                                /* GPS Info IFD Pointer */
+                                break;
+                            case 40965:
+                                /* Interoperability IFD Pointer */
+                                break;
+                                
+                            default:
+                                break;
+                        }
+                        /* TODO - now skip through IFD contents */
+                        for(int i = 0 ; i < next_IFD_offset && offset < filed_len; i++){
+                            jif_scan_next_byte(s); offset++;
+                        }
+                    }
+                }
                 
+            }
                 break;
             case M_APP2:    /* ICC */
+                logger("APP2 ICC\n");
                 
                 break;
             case M_APP13:    /* Photoshop layers, path, IPTC ... */
-                
+                printf("APP13 (PS?) @%lld\n", s->i);
                 break;
             case M_COM:
+                logger("COM\n");
                 
                 break;
             case M_DHP:
+                logger("DHP\n");
                 dinfo->is_mode_hierarchical = true;
                 return false; /* TODO */
                 break;
@@ -158,6 +236,9 @@ bool j_dec_read_header(pinfo dinfo){
             case M_SOF9:
             case M_SOF10:
             case M_SOF11:
+                logger("SOF\n");
+            {
+                J_FRAME f;
                 jframe_read_jif(&f, s);
                 dinfo->img.width = f.X;
                 dinfo->img.height = f.Y;
@@ -180,6 +261,7 @@ bool j_dec_read_header(pinfo dinfo){
                 dinfo->img.bits_per_component = f.P; // TODO ?
                 dinfo->img.bits_per_pixel = dinfo->img.bits_per_component * dinfo->img.num_of_components;
                 return true;    /* got a image width and height */
+            }
             default:
                 break;
         }
@@ -220,5 +302,8 @@ J_ERR j_info_get_error(pinfo dinfo){
 }
 
 void j_dec_destroy(pinfo dinfo){
+    if(dinfo && dinfo->jif_scanner){
+        free(dinfo->jif_scanner);
+    }
     free(dinfo);
 }

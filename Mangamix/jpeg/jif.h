@@ -116,6 +116,8 @@ JIF_MARKER jif_get_current_marker(JIF_SCANNER * s);
 bool jif_scan_next_maker_of(JIF_MARKER e_marker, JIF_SCANNER * s );
 
 byte jif_scan_next_byte(JIF_SCANNER * s);
+uint16_t jif_scan_2_bytes(JIF_SCANNER * s);
+uint32_t jif_scan_4_bytes(JIF_SCANNER * s);
 
 
 #endif /* jif_h */

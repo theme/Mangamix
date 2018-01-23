@@ -68,9 +68,6 @@
         pinfo p = j_dec_new();
         
         j_dec_set_src_array((unsigned char*)[fileData bytes], fileSize, p);
-        if(j_dec_read_header(p)){
-            NSLog(@"width %ld, height %ld", j_info_get_width(p), j_info_get_height(p) );
-        }
         XCTAssert(j_dec_read_header(p));
         XCTAssert(32 == j_info_get_width(p));
         XCTAssert(30 == j_info_get_height(p));

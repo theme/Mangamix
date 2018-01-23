@@ -64,3 +64,12 @@ bool jif_scan_next_maker_of(JIF_MARKER m, JIF_SCANNER * s ){
 byte jif_scan_next_byte(JIF_SCANNER * s){
     return s->pjif[++s->i];
 }
+
+uint16_t jif_scan_2_bytes(JIF_SCANNER * s){
+    return (jif_scan_next_byte(s) << 8) + jif_scan_next_byte(s);
+}
+
+uint32_t jif_scan_4_bytes(JIF_SCANNER * s){
+    return  (jif_scan_next_byte(s) << 24) + ( jif_scan_next_byte(s) << 16 )
+    + ( jif_scan_next_byte(s) << 8 ) + ( jif_scan_next_byte(s) );
+}
