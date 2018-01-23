@@ -49,15 +49,18 @@ typedef struct {
     uint8_t     bits_per_component;    /* TODO ? In decoded raw image, each component has same depth. */
 } J_IMAGE;
 
-typedef struct J_DEC_INFO {
-    byte           *src;  /* source jif array (to be decoded) */
+typedef struct J_DEC_INFO { /* decoder status (of a image segment between SOI and EOI markers */
+    byte           *src;                    /* source jif array (to be decoded) */
     jif_offset      src_size;
-    bool            is_mode_hierarchical; /* Jif contains a DHP marker segment before non-differential frame or frames. */
+    bool            is_mode_hierarchical;   /* Jif contains a DHP marker segment before non-differential frame or frames. */
     J_QTABLE        qtables[4];
     J_DEC_STAT      stat;
     J_ERR           err;
     J_IMAGE         img;
-    JIF_SCANNER    *jif_scanner;
+    /* JIF_SCANNER    *jif_scanner; */   /* needed? TO BE OR NOT TO BE, that is the question.
+                                     How many images are there in a  jpeg/jif file ?
+                                     When is scanner needed ?
+                                     */
 } * pinfo;
 
 pinfo j_dec_new(void) {
@@ -65,7 +68,6 @@ pinfo j_dec_new(void) {
     p->stat = J_DEC_NEW;
     p->img.width = 0;
     p->img.height = 0;
-    p->jif_scanner = NULL;
     return p;
 };
 
@@ -73,10 +75,6 @@ bool j_dec_set_src_array(unsigned char *src, unsigned long long size, pinfo dinf
     dinfo->src = src;
     dinfo->src_size = size;
     dinfo->stat = J_DEC_SET_SRC;
-    
-    if(NULL == dinfo->jif_scanner) {
-        dinfo->jif_scanner = jif_new_scanner(dinfo->src, dinfo->src_size);
-    }
     return true;
 };
 
@@ -87,7 +85,7 @@ bool dec_read_a_tbl_misc(pinfo dinfo, JIF_SCANNER *s){
     
     switch (m) {
         case M_DQT:
-            logger("DQT\n");
+            printf("%x @%llu DQT\n", m, jif_get_offset(s));
         {   uint16_t Lq = jif_scan_2_bytes(s);
             uint16_t offset = 2;
             
@@ -113,31 +111,31 @@ bool dec_read_a_tbl_misc(pinfo dinfo, JIF_SCANNER *s){
         }
             break;
         case M_DHT:
-            logger("DHT\n");
+            printf("%x @%llu DHT\n", m, jif_get_offset(s));
         {   uint16_t Lh = jif_scan_2_bytes(s); uint16_t offset = 2;
             
             byte b = jif_scan_next_byte(s); offset++;
         }
             break;
         case M_DAC:
-            logger("DAC\n");
+            printf("%x @%llu DAC\n", m, jif_get_offset(s));
             
             break;
         case M_DRI:
-            logger("DRI \n");
+            printf("%x @%llu DRI\n", m, jif_get_offset(s));
             
             break;
         case M_COM:
-            logger("DRI \n");
+            printf("%x @%llu COMMENT\n", m, jif_get_offset(s));
             
             break;
         case M_APP0:    /* JFIF versions >= 1.02 : embed a thumbnail image in 3 different formats. */
-            logger("APP0 JFIF\n");
+            printf("%x @%llu APP0 - JFIF\n", m, jif_get_offset(s));
             
             break;
             
         case M_APP1:    /* Exif Attribute Information | XMP */
-            logger("APP1 Exif | XMP\n");
+            printf("%x @%llu APP1 - Exif | XMP\n", m, jif_get_offset(s));
         {   /* try Exif */
             uint16_t filed_len = jif_scan_2_bytes(s);
             uint16_t offset = 2;
@@ -148,20 +146,20 @@ bool dec_read_a_tbl_misc(pinfo dinfo, JIF_SCANNER *s){
                 && 0x00 == jif_scan_next_byte(s)
                 && 0x00 == jif_scan_next_byte(s) ){
                 offset += 6;
-                logger("Exif ");
+                logger("> Exif\n");
                 
                 uint16_t byte_order = jif_scan_2_bytes(s); offset += 2;
                 if( 0x4949 == byte_order ) {    /* little endian */
-                    logger("\x49\x49 little ending\n");
+                    logger("> \x49\x49 little ending\n");
                 } else if ( 0x4d4d == byte_order ) {    /* big endian */
-                    logger("\x4d\x4d big ending\n");
+                    logger("> \x4d\x4d big ending\n");
                 }
                 uint16_t byte_42 = jif_scan_2_bytes(s); offset += 2;
                 if ( 0x002A != byte_42 ) {
-                    printf("   error reading Exif header at 0x0042.%xx\n", byte_42);
+                    printf(">   error reading Exif header at 0x0042.%xx\n", byte_42);
                 }
                 uint32_t IFD_offset =  jif_scan_4_bytes(s); offset += 4;
-                printf("IFD offset %d\n", IFD_offset);
+                printf("> IFD offset %d\n", IFD_offset);
                 for(int i = 0 ; i < IFD_offset - 8; i++){   /* scan to IFD */
                     jif_scan_next_byte(s); offset++;
                 }
@@ -199,7 +197,7 @@ bool dec_read_a_tbl_misc(pinfo dinfo, JIF_SCANNER *s){
         }
             break;
         case M_APP2:    /* ICC */
-            logger("APP2 ICC\n");
+            printf("%x @%llu APP2 - ICC\n", m, jif_get_offset(s));
             break;
         case M_APP3:
         case M_APP4:
@@ -211,12 +209,13 @@ bool dec_read_a_tbl_misc(pinfo dinfo, JIF_SCANNER *s){
         case M_APP10:
         case M_APP11:
         case M_APP12:
-            logger("APP3 ~ 12 ???\n");
+            printf("%x @%llu APP[3,12]\n", m, jif_get_offset(s));
             break;
         case M_APP13:    /* Photoshop layers, path, IPTC ... */
-            printf("APP13 (PS?) @%lld\n", jif_get_offset(s));
+            printf("%x @%llu APP13 (PS?)\n", m, jif_get_offset(s));
             break;
         default:
+            printf("%x @%llu NOT a table | misc marker.\n", m, jif_get_offset(s));
             return false;       /* NOT a tables | misc marker. */
     } /* end switch */
     
@@ -234,7 +233,7 @@ bool dec_read_sof_param(pinfo dinfo, JIF_SCANNER * s){
         case M_SOF9:
         case M_SOF10:
         case M_SOF11:
-            logger("SOFx\n");
+            printf("%x @%llu SOF%d\n", m, jif_get_offset(s), m-M_SOF0);
         {
             J_FRAME f;
             jframe_read_jif(&f, s);
@@ -261,7 +260,7 @@ bool dec_read_sof_param(pinfo dinfo, JIF_SCANNER * s){
             return true;    /* got a image width and height */
         }
         default:
-            err("> Error read SOF: not SOF marker");
+            printf("%x @%llu NOT M_SOFx\n", m, jif_get_offset(s));
             break;
     }
     return false;
@@ -320,21 +319,33 @@ bool j_dec_read_header(pinfo dinfo){
     if( 0 == dinfo->src ) {
         return false;
     }
-    dinfo->stat = J_DEC_HEADER; /* status : now reading header */
     
-    if( !jif_scan_next_maker_of(M_SOI, dinfo->jif_scanner) ){
+    JIF_SCANNER *s = jif_new_scanner(dinfo->src, dinfo->src_size);
+    
+    if( !jif_scan_next_maker_of(M_SOI, s) ){
         err("> Error no image (SOI marker).");
-        return false;
+        goto ertn;
     }
     
-    if (!dec_read_all_current_tables_misc(dinfo, dinfo->jif_scanner)){
+    dinfo->stat = J_DEC_HEADER; /* status : after SOI, reading header */
+    
+    if (!dec_read_all_current_tables_misc(dinfo, s)){
         err("> Error reading tables|misc." );
-        return false;
+        goto ertn;
     }
     
-    /* here scanner pointing to marker NOT tables|misc. */
+    /* here scanner pointing to marker AFTER some continuous tables|misc. */
     
-    return dec_prob_read_a_sof_param(dinfo, dinfo->jif_scanner);  /* to get image size, color ... */
+    if (!dec_prob_read_a_sof_param(dinfo, s)){  /* to get image size, color ... */
+        goto ertn;
+    }
+    
+    jif_del_scanner(s);
+    return true;
+    
+ertn:
+    jif_del_scanner(s);
+    return false;
 }
 
 unsigned long j_info_get_width(pinfo dinfo){
@@ -369,8 +380,5 @@ J_ERR j_info_get_error(pinfo dinfo){
 }
 
 void j_dec_destroy(pinfo dinfo){
-    if(dinfo && dinfo->jif_scanner){
-        free(dinfo->jif_scanner);
-    }
     free(dinfo);
 }
