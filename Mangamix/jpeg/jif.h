@@ -109,6 +109,7 @@ JIF_SCANNER * jif_new_scanner(byte * jif_array, jif_offset array_size);
 JIF_SCANNER * jif_copy_scanner(JIF_SCANNER *);
 void jif_del_scanner(JIF_SCANNER * );
 
+jif_offset jif_get_offset(JIF_SCANNER *);
 bool jif_is_marker_byte(byte b);
 
 bool jif_scan_next_marker(JIF_SCANNER * );

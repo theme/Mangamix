@@ -11,6 +11,11 @@
 #include <stdbool.h>
 #include <string.h> /* memcpy() */
 
+
+jif_offset jif_get_offset(JIF_SCANNER * s){
+    return s->i;
+}
+
 bool jif_is_marker_byte(byte b) {
     return (0x00 < b) && (b < 0xFF); /* Note all byte in open range (0x00, 0xff) are possible markers */
 }

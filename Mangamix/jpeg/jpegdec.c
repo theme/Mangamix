@@ -83,7 +83,7 @@ bool j_dec_set_src_array(unsigned char *src, unsigned long long size, pinfo dinf
 /* private: read top level tables|misc. */
 bool dec_read_a_tbl_misc(pinfo dinfo, JIF_SCANNER *s){
     JIF_MARKER m = jif_get_current_marker(s);
-    printf("%x\n", m);
+    printf("%x @%llu\n", m, jif_get_offset(s));
     
     switch (m) {
         case M_DQT:
@@ -165,6 +165,9 @@ bool dec_read_a_tbl_misc(pinfo dinfo, JIF_SCANNER *s){
                 for(int i = 0 ; i < IFD_offset - 8; i++){   /* scan to IFD */
                     jif_scan_next_byte(s); offset++;
                 }
+                
+                break;
+                
                 while(offset < filed_len){      /* read IFD */
                     uint16_t num_fields = jif_scan_2_bytes(s); offset +=2;
                     uint16_t tag = jif_scan_2_bytes(s); offset +=2;     /* IFD0 and IFD1 tag are the same as in TIFF */
@@ -211,7 +214,7 @@ bool dec_read_a_tbl_misc(pinfo dinfo, JIF_SCANNER *s){
             logger("APP3 ~ 12 ???\n");
             break;
         case M_APP13:    /* Photoshop layers, path, IPTC ... */
-            printf("APP13 (PS?) @%lld\n", s->i);
+            printf("APP13 (PS?) @%lld\n", jif_get_offset(s));
             break;
         default:
             return false;       /* NOT a tables | misc marker. */
@@ -269,8 +272,8 @@ bool dec_read_all_current_tables_misc(pinfo dinfo, JIF_SCANNER * s){
     bool success = false;
     
     while( jif_scan_next_marker(s) ){
-        if((success = dec_read_a_tbl_misc(dinfo, s))){
-            continue;
+        if(dec_read_a_tbl_misc(dinfo, s)){
+            success = true;
         } else {
             break;
         }
