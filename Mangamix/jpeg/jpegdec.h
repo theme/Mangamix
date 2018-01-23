@@ -68,7 +68,7 @@ typedef enum {
 
 pinfo j_dec_new(void);
 bool j_dec_set_src_array(unsigned char *src, unsigned long long size, pinfo dinfo);
-bool j_dec_read_header(pinfo dinfo);
+bool j_dec_read_header(pinfo dinfo);    /* read a frame in image */
 
 unsigned long j_info_get_width(pinfo dinfo);
 unsigned long j_info_get_height(pinfo dinfo);

@@ -15,6 +15,8 @@
 		A59E934F1FF3ED3C004A9F48 /* ImageIO.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A59E934D1FF3ED2F004A9F48 /* ImageIO.framework */; };
 		A5B8C0B220117109002A3E0D /* jif.c in Sources */ = {isa = PBXBuildFile; fileRef = A5B8C0B120117109002A3E0D /* jif.c */; };
 		A5B8C0B320117109002A3E0D /* jif.c in Sources */ = {isa = PBXBuildFile; fileRef = A5B8C0B120117109002A3E0D /* jif.c */; };
+		A5E9226D2016E7BE00740CDB /* jscan.c in Sources */ = {isa = PBXBuildFile; fileRef = A5E9226C2016E7BE00740CDB /* jscan.c */; };
+		A5E9226E2016E7BE00740CDB /* jscan.c in Sources */ = {isa = PBXBuildFile; fileRef = A5E9226C2016E7BE00740CDB /* jscan.c */; };
 		A5F71D1A1F83D11B00B045C9 /* AppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = A5F71D191F83D11B00B045C9 /* AppDelegate.m */; };
 		A5F71D1D1F83D11B00B045C9 /* ViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = A5F71D1C1F83D11B00B045C9 /* ViewController.m */; };
 		A5F71D1F1F83D11B00B045C9 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A5F71D1E1F83D11B00B045C9 /* Assets.xcassets */; };
@@ -53,6 +55,8 @@
 		A59E93481FEE5778004A9F48 /* JifDecoder.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = JifDecoder.m; sourceTree = "<group>"; };
 		A59E934D1FF3ED2F004A9F48 /* ImageIO.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = ImageIO.framework; path = System/Library/Frameworks/ImageIO.framework; sourceTree = SDKROOT; };
 		A5B8C0B120117109002A3E0D /* jif.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = jif.c; sourceTree = "<group>"; };
+		A5E9226B2016E7BE00740CDB /* jscan.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = jscan.h; sourceTree = "<group>"; };
+		A5E9226C2016E7BE00740CDB /* jscan.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = jscan.c; sourceTree = "<group>"; };
 		A5F71D151F83D11B00B045C9 /* Mangamix.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Mangamix.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A5F71D181F83D11B00B045C9 /* AppDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AppDelegate.h; sourceTree = "<group>"; };
 		A5F71D191F83D11B00B045C9 /* AppDelegate.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = AppDelegate.m; sourceTree = "<group>"; };
@@ -109,6 +113,8 @@
 				A5B8C0B120117109002A3E0D /* jif.c */,
 				A5FFC2012015B2BA00A4A9CD /* jframe.h */,
 				A5FFC2022015B2BA00A4A9CD /* jframe.c */,
+				A5E9226B2016E7BE00740CDB /* jscan.h */,
+				A5E9226C2016E7BE00740CDB /* jscan.c */,
 				A5500B201FF50D3400F5A216 /* jpegdec.h */,
 				A5500B211FF50D3400F5A216 /* jpegdec.c */,
 				A59E93471FEE5778004A9F48 /* JifDecoder.h */,
@@ -335,6 +341,7 @@
 				A59E93491FEE5778004A9F48 /* JifDecoder.m in Sources */,
 				A5FFC2032015B2BA00A4A9CD /* jframe.c in Sources */,
 				A5F71D1A1F83D11B00B045C9 /* AppDelegate.m in Sources */,
+				A5E9226D2016E7BE00740CDB /* jscan.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -345,6 +352,7 @@
 				A5500B231FF50D3400F5A216 /* jpegdec.c in Sources */,
 				A59E934A1FEE5778004A9F48 /* JifDecoder.m in Sources */,
 				A5FFC2042015B2BA00A4A9CD /* jframe.c in Sources */,
+				A5E9226E2016E7BE00740CDB /* jscan.c in Sources */,
 				A5F71D301F83D11B00B045C9 /* MangamixTests.m in Sources */,
 				A5B8C0B320117109002A3E0D /* jif.c in Sources */,
 			);

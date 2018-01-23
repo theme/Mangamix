@@ -28,10 +28,10 @@ bool jframe_read_jif(J_FRAME * f, JIF_SCANNER * s){
     int c;
     byte b;
     if( is_known_sof(jif_get_current_marker(s)) ){
-        f->Lf = (jif_scan_next_byte(s) << 8) + jif_scan_next_byte(s);
+        f->Lf = jif_scan_2_bytes(s);
         f->P = jif_scan_next_byte(s);
-        f->Y = (jif_scan_next_byte(s) << 8) + jif_scan_next_byte(s);
-        f->X = (jif_scan_next_byte(s) << 8) + jif_scan_next_byte(s);
+        f->Y = jif_scan_2_bytes(s);
+        f->X = jif_scan_2_bytes(s);
         f->Nf = jif_scan_next_byte(s);
         for(c = 0; c < f->Nf; c++){
             f->comps[c].C = jif_scan_next_byte(s);

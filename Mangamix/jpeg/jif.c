@@ -47,6 +47,17 @@ bool jif_scan_next_marker(JIF_SCANNER * s){
     return false;
 }
 
+JIF_MARKER jif_prob_next_marker(JIF_SCANNER * s){
+    byte* p = s->pjif;    /* helper for shorter code */
+    jif_offset i = s->i;
+    for(; i < (s->size -1); i++) {
+        if( (p[i] == 0xFF) && jif_is_marker_byte(p[i+1]) ) {   /* find a marker */
+            return p[i+1];
+        }
+    }
+    return 0x00;
+}
+
 JIF_MARKER jif_get_current_marker(JIF_SCANNER * s){
     return s->pjif[s->m];
 }
