@@ -26,8 +26,6 @@
 		A5F71D3B1F83D11B00B045C9 /* MangamixUITests.m in Sources */ = {isa = PBXBuildFile; fileRef = A5F71D3A1F83D11B00B045C9 /* MangamixUITests.m */; };
 		A5FFC1F72012B27700A4A9CD /* baseline-optimized-ps.jpg in Resources */ = {isa = PBXBuildFile; fileRef = A5FFC1F52012B27700A4A9CD /* baseline-optimized-ps.jpg */; settings = {ASSET_TAGS = ("sample jpg", ); }; };
 		A5FFC1F82012B27700A4A9CD /* baseline-standard.jpg in Resources */ = {isa = PBXBuildFile; fileRef = A5FFC1F62012B27700A4A9CD /* baseline-standard.jpg */; settings = {ASSET_TAGS = ("sample jpg", ); }; };
-		A5FFC2032015B2BA00A4A9CD /* jframe.c in Sources */ = {isa = PBXBuildFile; fileRef = A5FFC2022015B2BA00A4A9CD /* jframe.c */; };
-		A5FFC2042015B2BA00A4A9CD /* jframe.c in Sources */ = {isa = PBXBuildFile; fileRef = A5FFC2022015B2BA00A4A9CD /* jframe.c */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -76,8 +74,6 @@
 		A5F71D3C1F83D11B00B045C9 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		A5FFC1F52012B27700A4A9CD /* baseline-optimized-ps.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = "baseline-optimized-ps.jpg"; sourceTree = "<group>"; };
 		A5FFC1F62012B27700A4A9CD /* baseline-standard.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = "baseline-standard.jpg"; sourceTree = "<group>"; };
-		A5FFC2012015B2BA00A4A9CD /* jframe.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = jframe.h; sourceTree = "<group>"; };
-		A5FFC2022015B2BA00A4A9CD /* jframe.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = jframe.c; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -112,8 +108,6 @@
 			children = (
 				A557EABD2004065C00893FDC /* jif.h */,
 				A5B8C0B120117109002A3E0D /* jif.c */,
-				A5FFC2012015B2BA00A4A9CD /* jframe.h */,
-				A5FFC2022015B2BA00A4A9CD /* jframe.c */,
 				A5E9226B2016E7BE00740CDB /* jscan.h */,
 				A5E9226C2016E7BE00740CDB /* jscan.c */,
 				A5E922702017E19400740CDB /* exif.h */,
@@ -341,7 +335,6 @@
 				A5F71D251F83D11B00B045C9 /* main.m in Sources */,
 				A5B8C0B220117109002A3E0D /* jif.c in Sources */,
 				A59E93491FEE5778004A9F48 /* JifDecoder.m in Sources */,
-				A5FFC2032015B2BA00A4A9CD /* jframe.c in Sources */,
 				A5F71D1A1F83D11B00B045C9 /* AppDelegate.m in Sources */,
 				A5E9226D2016E7BE00740CDB /* jscan.c in Sources */,
 			);
@@ -353,7 +346,6 @@
 			files = (
 				A5500B231FF50D3400F5A216 /* jpegdec.c in Sources */,
 				A59E934A1FEE5778004A9F48 /* JifDecoder.m in Sources */,
-				A5FFC2042015B2BA00A4A9CD /* jframe.c in Sources */,
 				A5E9226E2016E7BE00740CDB /* jscan.c in Sources */,
 				A5F71D301F83D11B00B045C9 /* MangamixTests.m in Sources */,
 				A5B8C0B320117109002A3E0D /* jif.c in Sources */,

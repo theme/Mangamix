@@ -10,7 +10,6 @@
 
 /* inside decoder scope */
 #include "jif.h"
-#include "jframe.h"
 #include "exif.h"
 
 #define err(S) fprintf(stderr, S)
@@ -40,6 +39,24 @@ typedef enum {
     J_DEC_HEADER,
     J_DEC_FRAMES
 } J_DEC_STAT;
+
+/* Frame */
+typedef struct {
+    unsigned C;    /* Component identifier */
+    unsigned H;     /* 1 ~ 4, Horizontal sampling factor: (component horizontal dimension) / X */
+    unsigned V;     /* 1 ~ 4, Vertical sampling factor: (component vertical dimension) / Y */
+    unsigned Tq;    /* Quantization table destination selector */
+} J_COMPONENT;
+
+typedef struct {
+    unsigned Lf;    /* Frame header length */
+    unsigned P;     /* Sample precision */
+    unsigned Y;     /* max Number of lines in the source image */
+    unsigned X;     /* max Number of samples per line */
+    unsigned Nf;    /* Number of image components in frame (1: gray, 3:YCbCr|YIQ, 4:CMYK) */
+    J_COMPONENT comps[4];     /* pointer to array of SOF_COMP */
+} J_FRAME;
+
 
 typedef struct {
     uint16_t    width;    /* jpeg usual size : 1 ~ 65535 */
@@ -200,7 +217,21 @@ bool dec_read_sof(pinfo dinfo, JIF_SCANNER * s, bool header_only){
             printf("%x @%llu SOF%d\n", m, jif_get_offset(s), m-M_SOF0);
         {
             J_FRAME f;
-            jframe_read_jif(&f, s);
+            int c;
+            byte b;
+            f.Lf = jif_scan_2_bytes(s);
+            f.P = jif_scan_next_byte(s);
+            f.Y = jif_scan_2_bytes(s);
+            f.X = jif_scan_2_bytes(s);
+            f.Nf = jif_scan_next_byte(s);
+            for(c = 0; c < f.Nf; c++){
+                f.comps[c].C = jif_scan_next_byte(s);
+                b = jif_scan_next_byte(s);
+                f.comps[c].H = ( b >> 4 );
+                f.comps[c].V = ( 0x0f & b );
+                f.comps[c].Tq = jif_scan_next_byte(s);
+            }
+            
             dinfo->img.width = f.X;
             dinfo->img.height = f.Y;
             switch (f.Nf) {
@@ -221,6 +252,7 @@ bool dec_read_sof(pinfo dinfo, JIF_SCANNER * s, bool header_only){
             }
             dinfo->img.bits_per_component = f.P; // TODO ?
             dinfo->img.bits_per_pixel = dinfo->img.bits_per_component * dinfo->img.num_of_components;
+            
             if (header_only){
                 return true;    /* got a image width and height */
             }
