@@ -39,11 +39,10 @@
  *      > j_info_get_colorspace(dinfo) => J_COLOR_SPACE J_CS_GRAY | _RGB  | _CMYK
  *      > j_info_get_components(dinfo) => int numbrer_of_components
  *      > j_info_get_component_depth(int c, dinfo)  => int c_depth
- *  4. j_dec_decode(dinfo)
- *  5. j_dec_is_success(dinfo) => boolean TRUE | FALSE
+ *  4. j_dec_decode(dinfo) => true | false
  *      > j_info_get_error(dinfo)   => J_ERR ERR_XXXX
- *  6. j_dec_get_image(dinfo) => JSAMPLE[][] image_data
- *  7. j_dec_destroy(dinfo)
+ *  5. j_dec_get_image(dinfo) => JSAMPLE[][] image_data
+ *  6. j_dec_destroy(dinfo)
  */
 
 #ifndef jpegdec_h
@@ -82,7 +81,6 @@ size_t j_info_get_img_data_size(pinfo dinfo);
 void j_info_release_img_data(void *info, const void *data, size_t size);
 
 bool j_dec_decode(pinfo dinfo);
-bool j_dec_is_success(pinfo dinfo);
 J_ERR j_info_get_error(pinfo dinfo);
 void j_dec_destroy(pinfo dinfo);
 

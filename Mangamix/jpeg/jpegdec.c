@@ -371,16 +371,11 @@ int j_info_get_component_depth(int comp_i, pinfo dinfo){
     return dinfo->img.bits_per_component;    /* TODO : "a decoder with appropriate accuracy" */
 }
 
-#define TEST_SIZE (50 * 50 * 4)
 void * j_info_get_img_data(pinfo dinfo){
-    /* TODO : all white */
-    dinfo->img.data = malloc(TEST_SIZE);
-    memset(dinfo->img.data, 0x00, TEST_SIZE);
     return dinfo->img.data;
 }
 size_t j_info_get_img_data_size(pinfo dinfo){
-    /* TODO : all white */
-    return TEST_SIZE;
+    return dinfo->img.data_size;
 }
 
 void j_info_release_img_data(void *info, const void *data, size_t size){
@@ -394,11 +389,8 @@ void j_info_release_img_data(void *info, const void *data, size_t size){
 
 bool j_dec_decode(pinfo dinfo){
     dinfo->stat = J_DEC_FRAMES;
-    return true; /*TODO test*/
     return false;
 }
-
-bool j_dec_is_success(pinfo dinfo);
 
 J_ERR j_info_get_error(pinfo dinfo){
     return dinfo->err;
