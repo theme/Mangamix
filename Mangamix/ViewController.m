@@ -34,10 +34,9 @@
 - (NSImage*) imageFromJPG:(NSURL*) url{
     NSFileManager *fm = [NSFileManager defaultManager];
     unsigned long long fileSize = 0;
-    NSError *err = nil;
     NSDictionary *fileAttr = nil;
-    fileAttr = [fm attributesOfItemAtPath:url.path error:&err];
-    if ( nil != err ) {
+    fileAttr = [fm attributesOfItemAtPath:url.path error:nil];
+    if ( nil != fileAttr ) {
         fileSize = [fileAttr fileSize];
     } else {
         NSLog(@"Error getting file size!");

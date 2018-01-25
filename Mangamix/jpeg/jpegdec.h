@@ -52,6 +52,7 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 typedef struct J_DEC_INFO *pinfo;
 
@@ -75,6 +76,10 @@ unsigned long j_info_get_height(pinfo dinfo);
 J_COLOR_SPACE j_info_get_colorspace(pinfo dinfo);
 int j_info_get_num_of_components(pinfo dinfo);
 int j_info_get_component_depth(int comp_i, pinfo dinfo);    /* depth of i th component */
+
+void * j_info_get_img_data(pinfo dinfo);
+size_t j_info_get_img_data_size(pinfo dinfo);
+void j_info_release_img_data(void *info, const void *data, size_t size);
 
 bool j_dec_decode(pinfo dinfo);
 bool j_dec_is_success(pinfo dinfo);

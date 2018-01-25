@@ -65,6 +65,8 @@ typedef struct {
     J_COLOR_SPACE   color_space;
     uint8_t     bits_per_pixel;
     uint8_t     bits_per_component;    /* TODO ? In decoded raw image, each component has same depth. */
+    byte        *data;      /* the decoded image data */
+    size_t      data_size;
 } J_IMAGE;
 
 typedef struct J_DEC_INFO { /* decoder status (of a image segment between SOI and EOI markers */
@@ -86,6 +88,8 @@ pinfo j_dec_new(void) {
     p->stat = J_DEC_NEW;
     p->img.width = 0;
     p->img.height = 0;
+    p->img.data = NULL;
+    p->img.data_size = 0;
     return p;
 };
 
@@ -250,12 +254,15 @@ bool dec_read_sof(pinfo dinfo, JIF_SCANNER * s, bool header_only){
                 default:
                     break;
             }
-            dinfo->img.bits_per_component = f.P; // TODO ?
+            /* calculate image size. e.g. 4:2:0 */  // TODO
+            dinfo->img.bits_per_component = f.P;
             dinfo->img.bits_per_pixel = dinfo->img.bits_per_component * dinfo->img.num_of_components;
             
             if (header_only){
                 return true;    /* got a image width and height */
             }
+            /* alloc data for decoding */
+            
         }
         default:
             printf("%x @%llu NOT M_SOFx\n", m, jif_get_offset(s));
@@ -342,10 +349,12 @@ bool j_dec_read_header(pinfo dinfo){
 }
 
 unsigned long j_info_get_width(pinfo dinfo){
+    return 50;
     return dinfo->img.width;
 };
 
 unsigned long j_info_get_height(pinfo dinfo){
+    return 50;
     return dinfo->img.height;
 };
 
@@ -354,15 +363,38 @@ J_COLOR_SPACE j_info_get_colorspace(pinfo dinfo){
 }
 
 int j_info_get_num_of_components(pinfo dinfo){
+    return 4;
     return dinfo->img.num_of_components;
 }
 int j_info_get_component_depth(int comp_i, pinfo dinfo){
+    return 8;
     return dinfo->img.bits_per_component;    /* TODO : "a decoder with appropriate accuracy" */
+}
+
+#define TEST_SIZE (50 * 50 * 4)
+void * j_info_get_img_data(pinfo dinfo){
+    /* TODO : all white */
+    dinfo->img.data = malloc(TEST_SIZE);
+    memset(dinfo->img.data, 0x00, TEST_SIZE);
+    return dinfo->img.data;
+}
+size_t j_info_get_img_data_size(pinfo dinfo){
+    /* TODO : all white */
+    return TEST_SIZE;
+}
+
+void j_info_release_img_data(void *info, const void *data, size_t size){
+    /* (*data, size) ignored, 'cause info has them. */
+    pinfo dinfo = (pinfo) info;
+    if(dinfo->img.data != NULL){
+        free(dinfo->img.data);
+        dinfo->img.data = NULL;
+    }
 }
 
 bool j_dec_decode(pinfo dinfo){
     dinfo->stat = J_DEC_FRAMES;
-
+    return true; /*TODO test*/
     return false;
 }
 
@@ -373,5 +405,6 @@ J_ERR j_info_get_error(pinfo dinfo){
 }
 
 void j_dec_destroy(pinfo dinfo){
+    j_info_release_img_data(dinfo, dinfo->img.data, dinfo->img.data_size);
     free(dinfo);
 }
