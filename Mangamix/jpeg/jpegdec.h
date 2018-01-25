@@ -76,7 +76,7 @@ J_COLOR_SPACE j_info_get_colorspace(pinfo dinfo);
 int j_info_get_num_of_components(pinfo dinfo);
 int j_info_get_component_depth(int comp_i, pinfo dinfo);    /* depth of i th component */
 
-bool j_dec_decode_frames(pinfo dinfo);
+bool j_dec_decode(pinfo dinfo);
 bool j_dec_is_success(pinfo dinfo);
 J_ERR j_info_get_error(pinfo dinfo);
 void j_dec_destroy(pinfo dinfo);

@@ -360,7 +360,7 @@ int j_info_get_component_depth(int comp_i, pinfo dinfo){
     return dinfo->img.bits_per_component;    /* TODO : "a decoder with appropriate accuracy" */
 }
 
-bool j_dec_decode_frames(pinfo dinfo){
+bool j_dec_decode(pinfo dinfo){
     dinfo->stat = J_DEC_FRAMES;
 
     return false;

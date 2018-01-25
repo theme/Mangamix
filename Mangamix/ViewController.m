@@ -7,6 +7,7 @@
 //
 
 #import "ViewController.h"
+#import "JifDecoder.h"
 
 @implementation ViewController
 
@@ -19,20 +20,18 @@
         if (result == NSFileHandlingPanelOKButton) {
             NSURL*  theDoc = [[self.openImagePanel URLs] objectAtIndex:0];
             [self openImage:theDoc];
-            
         }
-        
     }];
 }
 
 - (void) openImage:(NSURL*) url{
     NSLog(@"%@", [NSString stringWithFormat: @"openImage:(NSURL*) %@", url.absoluteString]);
     
-    [self imageFromJPG:url];
+    [self.imageView setImage: [self imageFromJPG:url]];
 }
 
 // decode and show JPEG file
-- (void) imageFromJPG:(NSURL*) url{
+- (NSImage*) imageFromJPG:(NSURL*) url{
     NSFileManager *fm = [NSFileManager defaultManager];
     unsigned long long fileSize = 0;
     NSError *err = nil;
@@ -42,51 +41,32 @@
         fileSize = [fileAttr fileSize];
     } else {
         NSLog(@"Error getting file size!");
+        return NULL;
     }
     //
-    if ( [fm isReadableFileAtPath:url.path] ){
-        _imageView.image = [[NSImage alloc] initByReferencingURL:url]; // TODO: replace with homebrew decoder
-        
-        // read file into buffer
-        NSData *fileData;
-        fileData = [fm contentsAtPath:url.path];
-        
-        // read file header into probing buffer
-        NSData *header = [NSData alloc];
-        const unsigned long long BUFLEN = fileSize; // Full buffered image file
-        unsigned char* buffer[BUFLEN];
-        [fileData getBytes:buffer length:BUFLEN];
-        header = [header initWithBytes:buffer length:BUFLEN];
-        NSLog(@"%@", [header description]);
-        
-        // TODO replace header buffer mechanism with NSData method > - (void)getBytes:(void *)buffer range:(NSRange)range;
-//        NSRange ra = NSMakeRange(2, 3);
-        
-        // a decoder class : XTMJpegDecoder
-        // Needed: (that NSMutableData can do?)
-        // io from file (yes)
-        // read a byte, check, read the next (" the next " needs pointer type: NSRange )
-        // on encountering a marker, populate a corresponding NSData <- dataWithBytesNoCopy to describe it ( from, to, type )
-        // decoder class ( input: data | table, output : data )
-        // After: image class : NSImage
-        
-        
-        // Decode JFIF format
-        // TODO
-        // Maybe two interfaces ( JFIF < JIF  ) is needed
-        const unsigned char JFIFheader[] = { 0xff, 0xd8, 0xff, 0xe0 };  // JFIF: FF D8 FF E0
-        if(0 == memcmp(header.bytes, JFIFheader, sizeof JFIFheader))
-        {
-            NSLog(@"> JFIF");
-        }
-        
+    if ( ![fm isReadableFileAtPath:url.path] ){
+        NSLog(@"Error getting file size!");
+        return NULL;
     }
+//    _imageView.image = [[NSImage alloc] initByReferencingURL:url];
+    
+    // read jpeg file into buffer
+    NSData *fileData;
+    fileData = [fm contentsAtPath:url.path];
+    
+    // decode
+    CGImageRef cgi = [[self jifDecoder] decodeJifData:fileData];
+    NSSize s;
+    s.height = CGImageGetHeight(cgi);
+    s.width = CGImageGetWidth(cgi);
+    return [[NSImage alloc] initWithCGImage:cgi size:s];
 }
 
 - (void)viewDidLoad {
     [super viewDidLoad];
 
-    // Do any additional setup after loading the view.u
+    // Do any additional setup after loading the view.
+    self.jifDecoder = [JifDecoder alloc];
     
     // Create and configure the panel.
     self.openImagePanel = [NSOpenPanel openPanel];

@@ -78,6 +78,49 @@
     
 }
 
+
+- (void) testJpegBaselineDecode {
+    NSBundle *bundle = [NSBundle bundleForClass:[self class]];
+    NSString *filePath = [bundle pathForResource:@"baseline-standard" ofType:@"jpg"];
+    
+    
+    // get file size
+    NSFileManager *fm = [NSFileManager defaultManager];
+    unsigned long long fileSize = 0;
+    NSError *err = nil;
+    NSDictionary *fileAttr = nil;
+    
+    fileAttr = [fm attributesOfItemAtPath:filePath error:&err];
+    if ( nil != fileAttr ) {
+        fileSize = [fileAttr fileSize];
+        //        NSLog(@"Got file attributes:  %@", fileAttr);
+    } else {
+        NSLog(@"Error getting file size! %@", err);
+    }
+    
+    XCTAssert( [fm fileExistsAtPath:filePath]);
+    XCTAssert( [fm isReadableFileAtPath:filePath] );
+    XCTAssert( fileSize > 0 );
+    
+    if ( [fm isReadableFileAtPath:filePath] ){
+        // read file into buffer
+        NSData *fileData;
+        fileData = [fm contentsAtPath:filePath];
+        
+        // test : decode jpeg header
+        pinfo p = j_dec_new();
+        
+        j_dec_set_src_array((unsigned char*)[fileData bytes], fileSize, p);
+        
+        XCTAssert(j_dec_read_header(p));
+        XCTAssert(32 == j_info_get_width(p));
+        XCTAssert(30 == j_info_get_height(p));
+        
+        // release
+        j_dec_destroy(p);
+    }
+}
+
 //- (void)testByteArray {
 //    char array[4] = {0x22, 0xB0, 0x55, 0x6c};
 //    char * ptr = array;

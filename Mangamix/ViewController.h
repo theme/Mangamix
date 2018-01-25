@@ -7,12 +7,13 @@
 //
 
 #import <Cocoa/Cocoa.h>
+#import "JifDecoder.h"
 
 @interface ViewController : NSViewController
 
 @property (weak) IBOutlet NSImageView *imageView;
 @property (strong) NSOpenPanel *openImagePanel;
-
+@property (strong) JifDecoder *jifDecoder;
 
 @end
 

@@ -16,6 +16,6 @@
 // out << CGImageSource ( Reconstructed Image )
 @interface JifDecoder : NSObject
 
-//- (CGImageRef) decodeJifData:(NSData*) jifData;
+- (CGImageRef) decodeJifData:(NSData*) jifData;
 
 @end
