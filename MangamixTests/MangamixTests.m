@@ -10,6 +10,7 @@
 
 #import <ImageIO/ImageIO.h>
 
+#include "JifDecoder.h"
 #include "jpegdec.h"
 #include "jif.h"
 
@@ -78,47 +79,45 @@
     
 }
 
-
 - (void) testJpegBaselineDecode {
     NSBundle *bundle = [NSBundle bundleForClass:[self class]];
     NSString *filePath = [bundle pathForResource:@"baseline-standard" ofType:@"jpg"];
     
     
-    // get file size
     NSFileManager *fm = [NSFileManager defaultManager];
     unsigned long long fileSize = 0;
-    NSError *err = nil;
     NSDictionary *fileAttr = nil;
-    
-    fileAttr = [fm attributesOfItemAtPath:filePath error:&err];
+    fileAttr = [fm attributesOfItemAtPath:filePath error:nil];
     if ( nil != fileAttr ) {
         fileSize = [fileAttr fileSize];
-        //        NSLog(@"Got file attributes:  %@", fileAttr);
     } else {
-        NSLog(@"Error getting file size! %@", err);
+        NSLog(@"Error getting file size!");
+        return ;
+    }
+    //
+    if ( ![fm isReadableFileAtPath:filePath] ){
+        NSLog(@"Error getting file size!");
+        return ;
     }
     
-    XCTAssert( [fm fileExistsAtPath:filePath]);
-    XCTAssert( [fm isReadableFileAtPath:filePath] );
-    XCTAssert( fileSize > 0 );
+    // read jpeg file into buffer
+    NSData *fileData;
+    fileData = [fm contentsAtPath:filePath];
     
-    if ( [fm isReadableFileAtPath:filePath] ){
-        // read file into buffer
-        NSData *fileData;
-        fileData = [fm contentsAtPath:filePath];
-        
-        // test : decode jpeg header
-        pinfo p = j_dec_new();
-        
-        j_dec_set_src_array((unsigned char*)[fileData bytes], fileSize, p);
-        
-        XCTAssert(j_dec_read_header(p));
-        XCTAssert(32 == j_info_get_width(p));
-        XCTAssert(30 == j_info_get_height(p));
-        
-        // release
-        j_dec_destroy(p);
-    }
+    // decode
+    
+    JifDecoder * jifDecoder = [JifDecoder alloc];
+    CGImageRef cgi = [jifDecoder decodeJifData:fileData];
+    NSSize s;
+    s.height = CGImageGetHeight(cgi);
+    s.width = CGImageGetWidth(cgi);
+    NSImage * nsi = [[NSImage alloc] initWithCGImage:cgi size:s];
+    
+    // compare data with stock decoder
+    NSImage * snsi = [[NSImage alloc] initByReferencingFile:filePath];
+    
+    // 
+
 }
 
 //- (void)testByteArray {

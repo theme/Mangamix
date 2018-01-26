@@ -7,7 +7,6 @@
 //
 
 #import "ViewController.h"
-#import "JifDecoder.h"
 
 @implementation ViewController
 
@@ -40,12 +39,12 @@
         fileSize = [fileAttr fileSize];
     } else {
         NSLog(@"Error getting file size!");
-        return NULL;
+        return nil;
     }
     //
     if ( ![fm isReadableFileAtPath:url.path] ){
         NSLog(@"Error getting file size!");
-        return NULL;
+        return nil;
     }
 //    _imageView.image = [[NSImage alloc] initByReferencingURL:url];
     

@@ -14,9 +14,9 @@
     pinfo dinfo = j_dec_new();
     j_dec_set_src_array((unsigned char*)[jifData bytes], [jifData length], dinfo);
     CGImageRef ir = NULL;
+    
     if (j_dec_decode(dinfo)){
     
-        
         // TODO : construct CGImage
         size_t width = j_info_get_width(dinfo);     /* in pixel for image */
         size_t height = j_info_get_height(dinfo);

@@ -23,14 +23,15 @@ typedef union QUANT_TABLE_ARRAY {
     uint16_t    Q16[DCTSIZE];
 } qtbl_arr;
 typedef struct QUANT_TABLE {
-    uint8_t     precison;   /* 8 | 16 */
-    qtbl_arr    coeff_a;      /* DCT coeff array in zig-zag order */
+    uint8_t     precison;       /* 8 | 16 */
+    qtbl_arr    coeff_a;        /* DCT coeff array in zig-zag order */
 } J_QTABLE;
 
 /* Huffman tables */
 typedef struct {
-    byte    BITS[16];
-    uint8_t     HUFFVAL[16];
+    bool        Tc;             /* (Table class) 0: DC | lossless table, 1: AC table */
+    byte        nL[16];          /* Number of Huffman codes of length i (0~255) */
+    uint8_t     *vArrays[16];     /* 16 array pinter, to 16 list saving values of length i(0~255) */
 } J_HUFF_TBL;
 
 typedef enum {
@@ -74,6 +75,7 @@ typedef struct J_DEC_INFO { /* decoder status (of a image segment between SOI an
     jif_offset      src_size;
     bool            is_mode_hierarchical;   /* Jif contains a DHP marker segment before non-differential frame or frames. */
     J_QTABLE        qtables[4];
+    J_HUFF_TBL      htables[4];
     J_DEC_STAT      stat;
     J_ERR           err;
     J_IMAGE         img;
@@ -134,9 +136,22 @@ bool dec_read_a_tbl_misc(pinfo dinfo, JIF_SCANNER *s){
         {   uint16_t Lh = jif_scan_2_bytes(s);
             uint16_t offset = 2;
             
-            /* TODO : (now skipping..) */
             while(offset < Lh){
-                jif_scan_next_byte(s); offset++;
+                byte b = jif_scan_next_byte(s); offset++;
+                uint8_t Tc = ( b & 0xF0 )  >> 4 ;
+                uint8_t Th = b & 0x0F;
+                dinfo->htables[Th].Tc = Tc;
+                
+                for(int i = 0; i < 16; i++){
+                    dinfo->htables[Th].nL[i] = jif_scan_next_byte(s); offset++;
+                }
+                for(int i = 0; i < 16; i++){
+                    uint8_t * a = malloc(sizeof(uint8_t) * dinfo->htables[Th].nL[i]);
+                    dinfo->htables[Th].vArrays[i] = a;
+                    for(int j = 0; j < dinfo->htables[Th].nL[i]; j++){
+                         a[j] = jif_scan_next_byte(s); offset++;
+                    }
+                }
             }
         }
             break;
@@ -349,12 +364,10 @@ bool j_dec_read_header(pinfo dinfo){
 }
 
 unsigned long j_info_get_width(pinfo dinfo){
-    return 50;
     return dinfo->img.width;
 };
 
 unsigned long j_info_get_height(pinfo dinfo){
-    return 50;
     return dinfo->img.height;
 };
 
@@ -363,11 +376,9 @@ J_COLOR_SPACE j_info_get_colorspace(pinfo dinfo){
 }
 
 int j_info_get_num_of_components(pinfo dinfo){
-    return 4;
     return dinfo->img.num_of_components;
 }
 int j_info_get_component_depth(int comp_i, pinfo dinfo){
-    return 8;
     return dinfo->img.bits_per_component;    /* TODO : "a decoder with appropriate accuracy" */
 }
 
@@ -388,7 +399,6 @@ void j_info_release_img_data(void *info, const void *data, size_t size){
 }
 
 bool j_dec_decode(pinfo dinfo){
-    dinfo->stat = J_DEC_FRAMES;
     return false;
 }
 
