@@ -5,7 +5,7 @@
 //  Created by theme on 02/01/2018.
 //  Copyright © 2018 theme. All rights reserved.
 //
-//  JIF format. ( ref: JPEG - ISO/IEC 10918-1 : 1993 )
+//  JIF: JPEG Ingerchange format ( ref: JPEG - ISO/IEC 10918-1 : 1993 )
 
 #ifndef jif_h
 #define jif_h
@@ -13,8 +13,10 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include <stdint.h>
+#include <stdlib.h>
+#include <string.h> /* memcpy() */
 
-typedef unsigned char byte;
+#include "jtypes.h"
 
 typedef unsigned long long jif_offset;  /* offset in side array of target file */
 
@@ -97,6 +99,36 @@ typedef enum {
     M_COM = 0xfe /* Comment */
     
 } JIF_MARKER;
+
+
+/* M_SOF Frame */
+typedef struct {
+    unsigned Lf;    /* Frame header length */
+    unsigned P;     /* Sample precision */
+    unsigned Y;     /* max Number of lines in the source image */
+    unsigned X;     /* max Number of samples per line */
+    unsigned Nf;    /* Number of image components in frame (1: gray, 3:YCbCr|YIQ, 4:CMYK) */
+    
+    struct JIF_COMPONENT {
+        unsigned C;    /* Component identifier */
+        unsigned H;     /* 1 ~ 4, Horizontal sampling factor: (component horizontal dimension) / X */
+        unsigned V;     /* 1 ~ 4, Vertical sampling factor: (component vertical dimension) / Y */
+        unsigned Tq;    /* Quantization table destination selector */
+    } comps[4];     /* pointer to array of SOF_COMP */
+    
+} JIF_FRAME;
+
+/* M_SOS */
+typedef struct {
+    uint16_t    Ls; /* length of scan */
+    uint8_t     Ns; /* number of image component in scan */
+} JIF_SCAN;
+
+typedef enum {
+    J_MODE_ABBR_TABLE,          /* Abbreviated format for table-spec  (not a image) */
+    J_MODE_HIERARCHICAL,        /* Jif contains a DHP marker segment before non-differential frame or frames. */
+    J_MODE_NONE_HIERARCHICAL
+} JIF_FRAME_MODE;
 
 typedef struct jif_scanner {
     byte * pjif;

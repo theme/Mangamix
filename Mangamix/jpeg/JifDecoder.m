@@ -16,8 +16,6 @@
     CGImageRef ir = NULL;
     
     if (j_dec_decode(dinfo)){
-    
-        // TODO : construct CGImage
         size_t width = j_info_get_width(dinfo);     /* in pixel for image */
         size_t height = j_info_get_height(dinfo);
         size_t bitsPerComponent = 8;

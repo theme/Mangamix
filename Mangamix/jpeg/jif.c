@@ -7,9 +7,6 @@
 //
 
 #include "jif.h"
-#include <stdlib.h>
-#include <stdbool.h>
-#include <string.h> /* memcpy() */
 
 
 jif_offset jif_get_offset(JIF_SCANNER * s){

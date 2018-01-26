@@ -7,6 +7,12 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		A51603F5201AE00A00DCD761 /* jimg.c in Sources */ = {isa = PBXBuildFile; fileRef = A51603F4201AE00A00DCD761 /* jimg.c */; };
+		A51603F6201AE00A00DCD761 /* jimg.c in Sources */ = {isa = PBXBuildFile; fileRef = A51603F4201AE00A00DCD761 /* jimg.c */; };
+		A51603F9201BA8EA00DCD761 /* jentropydec.c in Sources */ = {isa = PBXBuildFile; fileRef = A51603F8201BA8EA00DCD761 /* jentropydec.c */; };
+		A51603FA201BA8EA00DCD761 /* jentropydec.c in Sources */ = {isa = PBXBuildFile; fileRef = A51603F8201BA8EA00DCD761 /* jentropydec.c */; };
+		A51603FD201BA96100DCD761 /* jtablespec.c in Sources */ = {isa = PBXBuildFile; fileRef = A51603FC201BA96100DCD761 /* jtablespec.c */; };
+		A51603FE201BA96100DCD761 /* jtablespec.c in Sources */ = {isa = PBXBuildFile; fileRef = A51603FC201BA96100DCD761 /* jtablespec.c */; };
 		A5500B221FF50D3400F5A216 /* jpegdec.c in Sources */ = {isa = PBXBuildFile; fileRef = A5500B211FF50D3400F5A216 /* jpegdec.c */; };
 		A5500B231FF50D3400F5A216 /* jpegdec.c in Sources */ = {isa = PBXBuildFile; fileRef = A5500B211FF50D3400F5A216 /* jpegdec.c */; };
 		A59E93491FEE5778004A9F48 /* JifDecoder.m in Sources */ = {isa = PBXBuildFile; fileRef = A59E93481FEE5778004A9F48 /* JifDecoder.m */; };
@@ -15,8 +21,6 @@
 		A59E934F1FF3ED3C004A9F48 /* ImageIO.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A59E934D1FF3ED2F004A9F48 /* ImageIO.framework */; };
 		A5B8C0B220117109002A3E0D /* jif.c in Sources */ = {isa = PBXBuildFile; fileRef = A5B8C0B120117109002A3E0D /* jif.c */; };
 		A5B8C0B320117109002A3E0D /* jif.c in Sources */ = {isa = PBXBuildFile; fileRef = A5B8C0B120117109002A3E0D /* jif.c */; };
-		A5E9226D2016E7BE00740CDB /* jscan.c in Sources */ = {isa = PBXBuildFile; fileRef = A5E9226C2016E7BE00740CDB /* jscan.c */; };
-		A5E9226E2016E7BE00740CDB /* jscan.c in Sources */ = {isa = PBXBuildFile; fileRef = A5E9226C2016E7BE00740CDB /* jscan.c */; };
 		A5F71D1A1F83D11B00B045C9 /* AppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = A5F71D191F83D11B00B045C9 /* AppDelegate.m */; };
 		A5F71D1D1F83D11B00B045C9 /* ViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = A5F71D1C1F83D11B00B045C9 /* ViewController.m */; };
 		A5F71D1F1F83D11B00B045C9 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A5F71D1E1F83D11B00B045C9 /* Assets.xcassets */; };
@@ -46,6 +50,13 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		A51603F3201AE00A00DCD761 /* jimg.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = jimg.h; sourceTree = "<group>"; };
+		A51603F4201AE00A00DCD761 /* jimg.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = jimg.c; sourceTree = "<group>"; };
+		A51603F7201BA8EA00DCD761 /* jentropydec.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = jentropydec.h; sourceTree = "<group>"; };
+		A51603F8201BA8EA00DCD761 /* jentropydec.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = jentropydec.c; sourceTree = "<group>"; };
+		A51603FB201BA96100DCD761 /* jtablespec.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = jtablespec.h; sourceTree = "<group>"; };
+		A51603FC201BA96100DCD761 /* jtablespec.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = jtablespec.c; sourceTree = "<group>"; };
+		A51603FF201BA9D700DCD761 /* jtypes.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = jtypes.h; sourceTree = "<group>"; };
 		A5500B201FF50D3400F5A216 /* jpegdec.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = jpegdec.h; sourceTree = "<group>"; };
 		A5500B211FF50D3400F5A216 /* jpegdec.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = jpegdec.c; sourceTree = "<group>"; };
 		A557EABD2004065C00893FDC /* jif.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = jif.h; sourceTree = "<group>"; };
@@ -53,9 +64,6 @@
 		A59E93481FEE5778004A9F48 /* JifDecoder.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = JifDecoder.m; sourceTree = "<group>"; };
 		A59E934D1FF3ED2F004A9F48 /* ImageIO.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = ImageIO.framework; path = System/Library/Frameworks/ImageIO.framework; sourceTree = SDKROOT; };
 		A5B8C0B120117109002A3E0D /* jif.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = jif.c; sourceTree = "<group>"; };
-		A5E9226B2016E7BE00740CDB /* jscan.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = jscan.h; sourceTree = "<group>"; };
-		A5E9226C2016E7BE00740CDB /* jscan.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = jscan.c; sourceTree = "<group>"; };
-		A5E922702017E19400740CDB /* exif.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = exif.h; sourceTree = "<group>"; };
 		A5F71D151F83D11B00B045C9 /* Mangamix.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Mangamix.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A5F71D181F83D11B00B045C9 /* AppDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AppDelegate.h; sourceTree = "<group>"; };
 		A5F71D191F83D11B00B045C9 /* AppDelegate.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = AppDelegate.m; sourceTree = "<group>"; };
@@ -106,11 +114,15 @@
 		A59E93331FE7D62B004A9F48 /* jpeg */ = {
 			isa = PBXGroup;
 			children = (
+				A51603FF201BA9D700DCD761 /* jtypes.h */,
 				A557EABD2004065C00893FDC /* jif.h */,
 				A5B8C0B120117109002A3E0D /* jif.c */,
-				A5E9226B2016E7BE00740CDB /* jscan.h */,
-				A5E9226C2016E7BE00740CDB /* jscan.c */,
-				A5E922702017E19400740CDB /* exif.h */,
+				A51603F3201AE00A00DCD761 /* jimg.h */,
+				A51603F4201AE00A00DCD761 /* jimg.c */,
+				A51603FB201BA96100DCD761 /* jtablespec.h */,
+				A51603FC201BA96100DCD761 /* jtablespec.c */,
+				A51603F7201BA8EA00DCD761 /* jentropydec.h */,
+				A51603F8201BA8EA00DCD761 /* jentropydec.c */,
 				A5500B201FF50D3400F5A216 /* jpegdec.h */,
 				A5500B211FF50D3400F5A216 /* jpegdec.c */,
 				A59E93471FEE5778004A9F48 /* JifDecoder.h */,
@@ -335,8 +347,10 @@
 				A5F71D251F83D11B00B045C9 /* main.m in Sources */,
 				A5B8C0B220117109002A3E0D /* jif.c in Sources */,
 				A59E93491FEE5778004A9F48 /* JifDecoder.m in Sources */,
+				A51603FD201BA96100DCD761 /* jtablespec.c in Sources */,
+				A51603F9201BA8EA00DCD761 /* jentropydec.c in Sources */,
+				A51603F5201AE00A00DCD761 /* jimg.c in Sources */,
 				A5F71D1A1F83D11B00B045C9 /* AppDelegate.m in Sources */,
-				A5E9226D2016E7BE00740CDB /* jscan.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -344,9 +358,11 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A51603FE201BA96100DCD761 /* jtablespec.c in Sources */,
+				A51603F6201AE00A00DCD761 /* jimg.c in Sources */,
 				A5500B231FF50D3400F5A216 /* jpegdec.c in Sources */,
 				A59E934A1FEE5778004A9F48 /* JifDecoder.m in Sources */,
-				A5E9226E2016E7BE00740CDB /* jscan.c in Sources */,
+				A51603FA201BA8EA00DCD761 /* jentropydec.c in Sources */,
 				A5F71D301F83D11B00B045C9 /* MangamixTests.m in Sources */,
 				A5B8C0B320117109002A3E0D /* jif.c in Sources */,
 			);

@@ -8,82 +8,6 @@
 
 #include "jpegdec.h"
 
-/* inside decoder scope */
-#include "jif.h"
-#include "exif.h"
-
-#define err(S) fprintf(stderr, S)
-#define logger(S) printf(S)
-
-/* DCT tables */
-#define DCTSIZE     64
-
-typedef union QUANT_TABLE_ARRAY {
-    uint8_t     Q8[DCTSIZE];
-    uint16_t    Q16[DCTSIZE];
-} qtbl_arr;
-typedef struct QUANT_TABLE {
-    uint8_t     precison;       /* 8 | 16 */
-    qtbl_arr    coeff_a;        /* DCT coeff array in zig-zag order */
-} J_QTABLE;
-
-/* Huffman tables */
-typedef struct {
-    bool        Tc;             /* (Table class) 0: DC | lossless table, 1: AC table */
-    byte        nL[16];          /* Number of Huffman codes of length i (0~255) */
-    uint8_t     *vArrays[16];     /* 16 array pinter, to 16 list saving values of length i(0~255) */
-} J_HUFF_TBL;
-
-/* Frame */
-typedef struct {
-    unsigned C;    /* Component identifier */
-    unsigned H;     /* 1 ~ 4, Horizontal sampling factor: (component horizontal dimension) / X */
-    unsigned V;     /* 1 ~ 4, Vertical sampling factor: (component vertical dimension) / Y */
-    unsigned Tq;    /* Quantization table destination selector */
-} J_COMPONENT;
-
-typedef struct {
-    unsigned Lf;    /* Frame header length */
-    unsigned P;     /* Sample precision */
-    unsigned Y;     /* max Number of lines in the source image */
-    unsigned X;     /* max Number of samples per line */
-    unsigned Nf;    /* Number of image components in frame (1: gray, 3:YCbCr|YIQ, 4:CMYK) */
-    J_COMPONENT comps[4];     /* pointer to array of SOF_COMP */
-} J_FRAME;
-
-typedef enum {
-    J_MODE_ABBR_TABLE,          /* Abbreviated format for table-spec  (not a image) */
-    J_MODE_HIERARCHICAL,        /* Jif contains a DHP marker segment before non-differential frame or frames. */
-    J_MODE_NONE_HIERARCHICAL
-} J_FRAME_MODE;
-
-typedef struct {
-    uint16_t    width;    /* jpeg usual size : 1 ~ 65535 */
-    uint16_t    height;
-    uint8_t     num_of_components;
-    J_COLOR_SPACE   color_space;
-    uint8_t     bits_per_pixel;
-    uint8_t     bits_per_component;    /* TODO ? In decoded raw image, each component has same depth. */
-    byte        *data;      /* the decoded image data */
-    size_t      data_size;
-} J_IMAGE;
-
-
-typedef struct J_DEC_INFO { /* decoder status (of a image segment between SOI and EOI markers */
-    byte           *src;                    /* source jif array (to be decoded) */
-    jif_offset      src_size;
-    
-    J_FRAME_MODE    fmode;          /* mode of a SOI */
-    J_QTABLE        qtables[4];
-    J_HUFF_TBL      htables[4];
-    
-    J_ERR           err;
-    J_IMAGE         img;
-    /* JIF_SCANNER    *jif_scanner; */   /* needed? TO BE OR NOT TO BE, that is the question.
-                                     How many images are there in a  jpeg/jif file ?
-                                     When is scanner needed ?
-                                     */
-} * pinfo;
 
 pinfo j_dec_new(void) {
     pinfo p = (pinfo) malloc(sizeof(struct J_DEC_INFO));
@@ -221,6 +145,24 @@ bool dec_read_a_tbl_misc(pinfo dinfo, JIF_SCANNER *s){
 }
 
 /* private: try read one sof marker. */
+bool dec_read_tables_misc(pinfo dinfo, JIF_SCANNER * s){
+    bool success = false;
+    
+    while( jif_scan_next_marker(s) ){
+        if(dec_read_a_tbl_misc(dinfo, s)){
+            success = true;     /* there exists >= 1 table | misc. */
+        } else {
+            break;  /* untile a marker NOT a table | misc. */
+        }
+    }
+    return success;
+}
+
+bool dec_read_a_scan( pinfo dinfo, JIF_SCANNER * s ){
+    return false;    // TODO
+}
+
+/* private: read one sof marker. */
 bool dec_read_sof(pinfo dinfo, JIF_SCANNER * s, bool header_only){
     JIF_MARKER m = jif_get_current_marker(s);
     switch (m) {
@@ -233,7 +175,7 @@ bool dec_read_sof(pinfo dinfo, JIF_SCANNER * s, bool header_only){
         case M_SOF11:
             printf("%x @%llu SOF%d\n", m, jif_get_offset(s), m-M_SOF0);
         {
-            J_FRAME f;
+            JIF_FRAME f;
             int c;
             byte b;
             f.Lf = jif_scan_2_bytes(s);
@@ -274,28 +216,24 @@ bool dec_read_sof(pinfo dinfo, JIF_SCANNER * s, bool header_only){
             if (header_only){
                 return true;    /* got a image width and height */
             }
-            /* alloc data for decoding */
             
+            /* multi scan loop */
+            /* read tables | misc. (inside SOF) */
+            while( dec_read_tables_misc(dinfo, s) ){
+            }
+            
+            /* SOS (~ DNL) */
+            
+            while( dec_read_a_scan(dinfo, s)){
+                
+            }
+            return true;
         }
         default:
             printf("%x @%llu NOT M_SOFx\n", m, jif_get_offset(s));
             break;
     }
     return false;
-}
-
-/* private: try read one sof marker. */
-bool dec_read_tables_misc(pinfo dinfo, JIF_SCANNER * s){
-    bool success = false;
-
-    while( jif_scan_next_marker(s) ){
-        if(dec_read_a_tbl_misc(dinfo, s)){
-            success = true;     /* there exists >= 1 table | misc. */
-        } else {
-            break;  /* untile a marker NOT a table | misc. */
-        }
-    }
-    return success;
 }
 
 /* private: try read one sof marker. */
@@ -314,23 +252,6 @@ bool dec_prob_read_a_sof_param(pinfo dinfo, JIF_SCANNER * s){
     return success;
 }
 
-/* private: read a scan in frame. ( possible more than one scan in a frame) */
-bool dec_scans(pinfo dinfo, JIF_SCANNER * s) {
-    JIF_MARKER m;
-
-    while ( jif_scan_next_marker(s) ){
-        m = jif_get_current_marker(s);
-        printf("%x << dec_scans()\n", m);
-        /* TODO */
-
-        if ( M_EOI == m) {
-            return true;
-        }
-    }
-
-    return true;   /* should have read a sof param and returned. */
-};
-
 /* scan jif file to get image size, color. */
 bool j_dec_read_header(pinfo dinfo){
     if( 0 == dinfo->src ) {
@@ -344,9 +265,26 @@ bool j_dec_read_header(pinfo dinfo){
     while( jif_scan_next_maker_of(M_SOI, s_soi) ){
         
         /* read tables | misc. */
-        if (!dec_read_tables_misc(dinfo, s_soi)){   /* TODO: should test is not thumbnail */
+        if (!dec_read_tables_misc(dinfo, s_soi)){
             err("> Error reading tables|misc." );
             continue;
+        }
+        
+        switch (jif_get_current_marker(s_soi)) {
+            case M_EOI:
+                continue;
+                break;
+            case M_DHP:
+                if (!dec_read_tables_misc(dinfo, s_soi)){
+                    err("> Error reading tables|misc." );
+                    continue;
+                }
+                break;
+            case M_EXP:
+                jif_scan_next_marker(s_soi);
+                break;
+            default:
+                break;
         }
         
         /* read SOF to get image size */
@@ -368,7 +306,7 @@ unsigned long j_info_get_height(pinfo dinfo){
     return dinfo->img.height;
 };
 
-J_COLOR_SPACE j_info_get_colorspace(pinfo dinfo){
+JIMG_COLOR_SPACE j_info_get_colorspace(pinfo dinfo){
     return dinfo->img.color_space;
 }
 
@@ -412,22 +350,23 @@ bool j_dec_decode(pinfo dinfo){
             continue;
         }
         
-        switch (dinfo->fmode) {
-            case J_MODE_ABBR_TABLE:
+        switch (jif_get_current_marker(s_soi)) {
+            case M_EOI:
+                dinfo->f_mode = J_MODE_ABBR_TABLE;
                 err("> Do not support mode_abbr_table yet." );
                 goto cleanup;
                 break;
-            case J_MODE_HIERARCHICAL:
+            case M_DHP:
+                dinfo->f_mode = J_MODE_HIERARCHICAL;
                 err("> Do not support mode_hierarchical yet." );
                 goto cleanup;
                 break;
-            case J_MODE_NONE_HIERARCHICAL:
-                break;
             default:
+                dinfo->f_mode = J_MODE_NONE_HIERARCHICAL;
                 break;
         }
         
-        /* read SOF to get image */
+        /* read SOF : a image */
         if (dec_read_sof(dinfo, s_soi, false)){
             success = true;
             break;
