@@ -34,13 +34,6 @@ typedef struct {
     uint8_t     *vArrays[16];     /* 16 array pinter, to 16 list saving values of length i(0~255) */
 } J_HUFF_TBL;
 
-typedef enum {
-    J_DEC_NEW,
-    J_DEC_SET_SRC,
-    J_DEC_HEADER,
-    J_DEC_FRAMES
-} J_DEC_STAT;
-
 /* Frame */
 typedef struct {
     unsigned C;    /* Component identifier */
@@ -58,6 +51,11 @@ typedef struct {
     J_COMPONENT comps[4];     /* pointer to array of SOF_COMP */
 } J_FRAME;
 
+typedef enum {
+    J_MODE_ABBR_TABLE,          /* Abbreviated format for table-spec  (not a image) */
+    J_MODE_HIERARCHICAL,        /* Jif contains a DHP marker segment before non-differential frame or frames. */
+    J_MODE_NONE_HIERARCHICAL
+} J_FRAME_MODE;
 
 typedef struct {
     uint16_t    width;    /* jpeg usual size : 1 ~ 65535 */
@@ -70,13 +68,15 @@ typedef struct {
     size_t      data_size;
 } J_IMAGE;
 
+
 typedef struct J_DEC_INFO { /* decoder status (of a image segment between SOI and EOI markers */
     byte           *src;                    /* source jif array (to be decoded) */
     jif_offset      src_size;
-    bool            is_mode_hierarchical;   /* Jif contains a DHP marker segment before non-differential frame or frames. */
+    
+    J_FRAME_MODE    fmode;          /* mode of a SOI */
     J_QTABLE        qtables[4];
     J_HUFF_TBL      htables[4];
-    J_DEC_STAT      stat;
+    
     J_ERR           err;
     J_IMAGE         img;
     /* JIF_SCANNER    *jif_scanner; */   /* needed? TO BE OR NOT TO BE, that is the question.
@@ -87,7 +87,6 @@ typedef struct J_DEC_INFO { /* decoder status (of a image segment between SOI an
 
 pinfo j_dec_new(void) {
     pinfo p = (pinfo) malloc(sizeof(struct J_DEC_INFO));
-    p->stat = J_DEC_NEW;
     p->img.width = 0;
     p->img.height = 0;
     p->img.data = NULL;
@@ -98,7 +97,6 @@ pinfo j_dec_new(void) {
 bool j_dec_set_src_array(unsigned char *src, unsigned long long size, pinfo dinfo) {
     dinfo->src = src;
     dinfo->src_size = size;
-    dinfo->stat = J_DEC_SET_SRC;
     return true;
 };
 
@@ -354,7 +352,6 @@ bool j_dec_read_header(pinfo dinfo){
         /* read SOF to get image size */
         if (dec_prob_read_a_sof_param(dinfo, s_soi)){   /* prob_read won't affect s_soi */
             success = true;
-            dinfo->stat = J_DEC_HEADER;     /* decoder got jpeg header */
             break;
         }
     }
@@ -399,7 +396,46 @@ void j_info_release_img_data(void *info, const void *data, size_t size){
 }
 
 bool j_dec_decode(pinfo dinfo){
-    return false;
+    if( 0 == dinfo->src ) {
+        return false;
+    }
+    
+    bool success = false;
+    
+    /* process every SOI segment in jif file */
+    JIF_SCANNER *s_soi = jif_new_scanner(dinfo->src, dinfo->src_size);
+    while( jif_scan_next_maker_of(M_SOI, s_soi) ){
+        
+        /* read tables | misc. */
+        if (!dec_read_tables_misc(dinfo, s_soi)){   /* TODO: should test is not thumbnail */
+            err("> Error reading tables|misc." );
+            continue;
+        }
+        
+        switch (dinfo->fmode) {
+            case J_MODE_ABBR_TABLE:
+                err("> Do not support mode_abbr_table yet." );
+                goto cleanup;
+                break;
+            case J_MODE_HIERARCHICAL:
+                err("> Do not support mode_hierarchical yet." );
+                goto cleanup;
+                break;
+            case J_MODE_NONE_HIERARCHICAL:
+                break;
+            default:
+                break;
+        }
+        
+        /* read SOF to get image */
+        if (dec_read_sof(dinfo, s_soi, false)){
+            success = true;
+            break;
+        }
+    }
+cleanup:
+    jif_del_scanner(s_soi);
+    return success;
 }
 
 J_ERR j_info_get_error(pinfo dinfo){
