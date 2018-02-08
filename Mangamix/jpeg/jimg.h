@@ -9,15 +9,38 @@
 #ifndef jimg_h
 #define jimg_h
 
-//  Image (Source | Reconstructed)
+// Image <= n x Components
+//      Components <= sample matrix
+
+
+//  Image (Source encoder | Reconstructed from decoder)
 //  (0~255) components (sample arrays).
 
 #include <stdio.h>
+#include <stdlib.h>
 #include "jtypes.h"
 
-typedef struct  {
-    unsigned int precision;     /* DCT: 8,12; those lossless: 2 ~ 16 */
-} JIMG_COMP;
+#define JMAX_COMPONENTS     256
+
+typedef uint16_t    JIMG_SAMPLE;        /* enough to save 8 or 12 bit precision integer */
+
+typedef struct {
+    uint16_t    H;      /* sampling factor */
+    uint16_t    V;      /* sampling factor */
+    unsigned int  sample_precision;          /* DCT: 8,12; those lossless: 2 ~ 16 */
+    JIMG_SAMPLE    *   data;                  /* the decoded image data */
+} JIMG_COMPONENT;
+
+
+typedef struct {
+    uint16_t    X;      /* maximum component's width */
+    uint16_t    Y;
+    JIMG_COMPONENT  *comps[JMAX_COMPONENTS];
+    bool        comp_map[JMAX_COMPONENTS];
+    uint8_t     num_of_components;
+} JIMG;
+
+/* the output format */
 
 typedef enum  {
     J_COLOR_GRAY,
@@ -26,14 +49,20 @@ typedef enum  {
 } JIMG_COLOR_SPACE;
 
 typedef struct {
-    uint16_t    width;    /* jpeg usual size : 1 ~ 65535 */
+    uint16_t    width;
     uint16_t    height;
-    uint8_t     num_of_components;
     JIMG_COLOR_SPACE   color_space;
     uint8_t     bits_per_pixel;
-    uint8_t     bits_per_component;    /* TODO ? In decoded raw image, each component has same depth. */
-    byte        *data;      /* the decoded image data */
+    uint8_t     bits_per_component;
+    byte        *data;
     size_t      data_size;
-} JIMG;
+} JIMG_BITMAP;
+
+JIMG * jimg_new(void);
+JIMG * jimg_set_components(JIMG * img, uint8_t index, uint16_t X, uint16_t Y, unsigned int precision);
+void jimg_free(JIMG * img);
+
+JIMG_BITMAP * jbmp_new(void);
+void jbmp_free(JIMG_BITMAP * bmp);
 
 #endif /* jimg_h */

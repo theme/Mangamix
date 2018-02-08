@@ -8,6 +8,8 @@
 
 #import "JifDecoder.h"
 
+#import "jpegdec.h"
+
 @implementation JifDecoder
 
 - (CGImageRef) decodeJifData:(NSData*) jifData{
@@ -23,7 +25,7 @@
         size_t bytesPerRow = 150;
         CGColorSpaceRef space = CGColorSpaceCreateDeviceRGB();
         CGBitmapInfo bitmapInfo = kCGBitmapByteOrder32Little | kCGImageAlphaNoneSkipLast;
-        CGDataProviderRef provider = CGDataProviderCreateWithData(dinfo, j_info_get_img_data(dinfo), j_info_get_img_data_size(dinfo), j_info_release_img_data);
+        CGDataProviderRef provider = CGDataProviderCreateWithData(dinfo, j_info_get_bmp_data(dinfo), j_info_get_bmp_data_size(dinfo), j_info_release_bmp_data);
         const CGFloat *decode = NULL;   /* do not map color */
         bool shouldInterpolate = true;  /* Core Graphics should apply a pixel-smoothing algorithm to the image, when output device with higher resolution than data. */
         CGColorRenderingIntent intent = kCGRenderingIntentAbsoluteColorimetric;

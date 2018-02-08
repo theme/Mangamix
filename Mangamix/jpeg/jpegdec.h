@@ -6,7 +6,7 @@
 //  Copyright © 2017 theme. All rights reserved.
 //
 
-//  JPEG decoder : decode (jpeg.baseline) jif.
+//  JPEG decoder  (is embodiment of coding *process*) : decode (jpeg.baseline) jif.
 
 //  Input:
 //      jif bits array. (jif file)
@@ -16,6 +16,32 @@
 //      2. image components array.
 //  Error:
 //      defined in J_ERR.
+
+/*
+ *  The Baselien sequenatial process is DCT based, and use Huffman coding.
+ *  Many jpeg files use this mode.
+ */
+
+/*  In standard : CCITT Rec. T.81 (1992 E) = ISO/IEC 10918-1 : 1993(E)
+ *  "INFORMATION TECHNOLOGY –
+ *      DIGITAL COMPRESSION AND CODING OF CONTINUOUS-TONE STILL IMAGES – REQUIREMENTS AND GUIDELINES"
+ *  which was prepared by CCITT Study Group VIII and the Joint Photographic Experts Group (JPEG) of ISO/IEC JTC 1/SC 29/WG 10.
+ *
+ *  There are 2 class of encoding & decoding process.
+ *      1. lossy    -   based on DCT : baseline sequential process / extended DCT-based process
+ *      2. lossless -   not based on DCT
+ *
+ *  There are 4 distinct _modes of operation_ under wich various coding processes are defined.
+ *      1. sequentail DCT based - 8 x 8 sample blocks are DCT transformed, quantized, entropy encoded, out putted.
+ *      2. progressive DCT based - 8 x 8 sample blocks are DCT transformed, quantized,
+ *                                  buffered, spectral selected , successive approximated, partially encoded in each of multiple scans.
+ *      3. lossless
+ *      4. hierarchical - multi-resolution requirements
+ *
+ *  There are 2 encoding procudure for _entropy encoding_:
+ *      1. Huffman coding   (use Huffman tables, no default ones, APP may choose)
+ *      2. arithmetic coding (use arithmetic coding conditioning tables, defined )
+ */
 
 /*
  *  To be used with osx Quartz 2D api (where a bitmap image is an
@@ -69,20 +95,38 @@ typedef enum {
     ERR_UNKNOWN
 } J_ERR;
 
-typedef struct J_DEC_INFO { /* decoder status (of a image segment between SOI and EOI markers */
-    /* input: jif data */
-    byte           *src;                    /* source jif array (to be decoded) */
-    jif_offset      src_size;
+ /* decoder status */
+#define JTBL_NUM 4
+
+typedef struct J_DEC_INFO {
+    /* (per file) input: jif data */
+    byte               *src;        /* source jif array (to be decoded) */
+    jif_offset          src_size;
     
-    /* output: image data */
-    JIMG         img;
+    /* (per file) output: image data */
+    JIMG                *img;
+    JIMG_BITMAP         *bmp;
     
-    /* pointer to tables spec */
-    JIF_FRAME_MODE    f_mode;          /* mode of a SOI */
-    JTBL_QUANT        qtables[4];
-    JTBL_HUFF      htables[4];
+    /* (per decoder) coding etc. */
+    bool                is_dct_based;
+    bool                is_use_arithmetic_coding;
     
-    /* other info */
+    /* (per image) pointer to tables spec */
+    JTBL_QUANT          tQ[JTBL_NUM];
+    JTBL_HUFF           *tH[JTBL_NUM];
+    JIF_HUFF            *jH[JTBL_NUM];
+    
+    /* (per frame) frame and component */
+    JIF_FRAME_MODE      f_mode;     /* got from tables/misc. segments after SOI */
+    JIF_FRAME_PARAM     f_para;
+    
+    /* (per scan)  */
+    JIF_SCAN_PARAM      scan_param;
+    JIF_SCAN_PARAM_jth * scan_jth_params;
+    uint16_t            Ri;     /* scan restart interval */
+    unsigned int        sample_per_MCU;
+
+    /* (for decoder) other info */
     J_ERR           err;
 } * pinfo;
 
@@ -97,9 +141,10 @@ JIMG_COLOR_SPACE j_info_get_colorspace(pinfo dinfo);
 int j_info_get_num_of_components(pinfo dinfo);
 int j_info_get_component_depth(int comp_i, pinfo dinfo);    /* depth of i th component */
 
-void * j_info_get_img_data(pinfo dinfo);
-size_t j_info_get_img_data_size(pinfo dinfo);
-void j_info_release_img_data(void *info, const void *data, size_t size);
+void * j_info_get_bmp_data(pinfo dinfo);
+size_t j_info_get_bmp_data_size(pinfo dinfo);
+
+void j_info_release_bmp_data(void *info, const void *data, size_t size);
 
 bool j_dec_decode(pinfo dinfo);
 J_ERR j_info_get_error(pinfo dinfo);

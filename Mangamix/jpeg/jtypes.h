@@ -9,8 +9,12 @@
 #ifndef jtypes_h
 #define jtypes_h
 
+#include <stdbool.h>
+#include <stdint.h>
 
 typedef unsigned char byte;
+
+typedef uint8_t coeff_t;
 
 
 #endif /* jtypes_h */

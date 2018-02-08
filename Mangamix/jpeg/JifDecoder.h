@@ -13,7 +13,6 @@
 #import <Foundation/Foundation.h>
 #import <ImageIO/ImageIO.h>
 
-#import "jpegdec.h"
 
 @interface JifDecoder : NSObject
 

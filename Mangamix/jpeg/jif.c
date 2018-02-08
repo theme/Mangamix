@@ -10,7 +10,7 @@
 
 
 jif_offset jif_get_offset(JIF_SCANNER * s){
-    return s->i;
+    return s->b / 8;
 }
 
 bool jif_is_marker_byte(byte b) {
@@ -21,9 +21,9 @@ bool jif_is_marker_byte(byte b) {
 JIF_SCANNER * jif_new_scanner(byte * jif_array, jif_offset array_size){
     JIF_SCANNER * s = (JIF_SCANNER *)malloc(sizeof(JIF_SCANNER));
     s->pjif = jif_array;
-    s->size = array_size;
+    s->size = array_size * 8;
     s->m = 0;
-    s->i = 0;
+    s->b = 0;
     return s;
 }
 
@@ -40,9 +40,10 @@ void jif_del_scanner(JIF_SCANNER * s){
 bool jif_scan_next_marker(JIF_SCANNER * s){
     byte* p = s->pjif;    /* helper for shorter code */
     
-    for(; s->i < (s->size -1); s->i++) {
-        if( (p[s->i] == 0xFF) && jif_is_marker_byte(p[s->i+1]) ) {   /* find a marker */
-            s->m = ++s->i;
+    for(; s->b < (s->size - 8); s->b += 8 ) {
+        if( (p[s->b / 8] == 0xFF) && jif_is_marker_byte(p[(s->b / 8 )+1]) ) {   /* find a marker */
+            s->b += 8;
+            s->m = s->b / 8;
             return true;
         }
     }
@@ -51,10 +52,10 @@ bool jif_scan_next_marker(JIF_SCANNER * s){
 
 JIF_MARKER jif_prob_next_marker(JIF_SCANNER * s){
     byte* p = s->pjif;    /* helper for shorter code */
-    jif_offset i = s->i;
-    for(; i < (s->size -1); i++) {
-        if( (p[i] == 0xFF) && jif_is_marker_byte(p[i+1]) ) {   /* find a marker */
-            return p[i+1];
+    jif_offset i = s->b;
+    for(; i < (s->size -8); i += 8) {
+        if( (p[i/8] == 0xFF) && jif_is_marker_byte(p[(i/8)+1]) ) {   /* find a marker */
+            return p[(i/8)+1];
         }
     }
     return 0x00;
@@ -75,7 +76,8 @@ bool jif_scan_next_maker_of(JIF_MARKER m, JIF_SCANNER * s ){
 }
 
 byte jif_scan_next_byte(JIF_SCANNER * s){
-    return s->pjif[++s->i];
+    s->b += 8;
+    return s->pjif[s->b / 8];
 }
 
 uint16_t jif_scan_2_bytes(JIF_SCANNER * s){
@@ -86,3 +88,31 @@ uint32_t jif_scan_4_bytes(JIF_SCANNER * s){
     return  (jif_scan_next_byte(s) << 24) + ( jif_scan_next_byte(s) << 16 )
     + ( jif_scan_next_byte(s) << 8 ) + ( jif_scan_next_byte(s) );
 }
+
+uint16_t jif_scan_t_bits(JIF_SCANNER * s, jif_offset t){
+    uint16_t bits;
+    jif_offset byte1 = s->b / 8, byte2 = (s->b + t) / 8;
+    if ( byte1 == byte2 ){  // in the same byte
+        /* read this byte */
+        bits = s->pjif[byte1];
+        /* right shift */
+        bits = bits >> ( 8 - (s->b%8) - t);
+    } else {    // across two bytes
+        /* read two bytes */
+        bits = s->pjif[byte1];
+        bits = bits << 8;
+        bits += s->pjif[byte2];
+        
+        /* right shift */
+        bits = bits >> ( 16 - (s->b%8) - t);
+    }
+    
+    s->b += t;
+    return bits;
+}
+
+uint16_t jif_scan_next_bit(JIF_SCANNER * s){
+    return jif_scan_t_bits(s, 1);
+}
+
+
