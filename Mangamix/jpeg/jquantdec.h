@@ -1,22 +1,23 @@
 //
-//  jtablespec.h
+//  jquantdec.h
 //  Mangamix
 //
-//  Created by theme on 27/01/2018.
+//  Created by theme on 09/02/2018.
 //  Copyright © 2018 theme. All rights reserved.
 //
 
-#ifndef jtablespec_h
-#define jtablespec_h
+#ifndef jquantdec_h
+#define jquantdec_h
 
 #include <stdio.h>
-#include <stdbool.h>
 #include "jtypes.h"
 #include "jentropydec.h"
 
 /* DCT tables */
 #define DCTSIZE     64
 #define DCTSIZE_ROOT    8
+
+typedef uint8_t coeff_t;
 
 typedef union QUANT_TABLE_ARRAY {
     uint8_t     Q8[DCTSIZE];
@@ -28,6 +29,6 @@ typedef struct QUANT_TABLE {
     qtbl_arr    coeff_a;        /* DCT coeff array in zig-zag order */
 } JTBL_QUANT;
 
+void jquant_dequant(JTBL_QUANT * tQ, coeff_t * ZZ);
 
-
-#endif /* jtablespec_h */
+#endif /* jquantdec_h */

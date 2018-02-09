@@ -117,17 +117,20 @@ typedef struct {
     unsigned int Al:4;      /* Successive approximation bit position low or point transform */
 } JIF_SCAN_PARAM;
 
+typedef uint16_t width_t;
+
 typedef struct {
     unsigned int Cs:8;    /* scan component selector */
     unsigned int Td:4;    /* DC entropy coding table selector */
     unsigned int Ta:4;    /* AC entropy coding table selector */
 } JIF_SCAN_PARAM_jth;
 
+
 typedef struct {
     unsigned int Lf;            /* Frame header length */
     unsigned int P;             /* Sample precision */
-    unsigned int Y;             /* max Number of sample lines in the source image */
-    unsigned int X;             /* max Number of samples per line */
+    width_t Y;             /* max Number of sample lines in source image */
+    width_t X;             /* max Number of samples per line */
     unsigned int Nf;            /* Number of image components in frame ( 1 ~ 255 ) */
     JIF_COMPONENT_PARAM * comps;    /* ( in this frame ) */
 } JIF_FRAME_PARAM;

@@ -14,7 +14,5 @@
 
 typedef unsigned char byte;
 
-typedef uint8_t coeff_t;
-
 
 #endif /* jtypes_h */

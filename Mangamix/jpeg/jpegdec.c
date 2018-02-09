@@ -96,8 +96,7 @@ bool dec_read_a_tbl_misc(pinfo dinfo, JIF_SCANNER *s){
         {   uint16_t Lr = jif_scan_2_bytes(s);
             uint16_t offset = 2;
             if ( 4 != Lr ) {err("error DRI length\n");}
-            uint16_t Ri = jif_scan_2_bytes(s);  offset+=2;
-            dinfo->Ri = Ri;       /* restart interval is enabled if > 0 */
+            dinfo->scan_Ri = jif_scan_2_bytes(s);  offset+=2; /* restart interval is enabled if > 0 */
         }
             break;
         case M_COM:
@@ -354,7 +353,7 @@ bool dec_read_scan_header(pinfo dinfo, JIF_SCANNER * s){
             dinfo->scan_jth_params = realloc(dinfo->scan_jth_params,
                                                     Ns * sizeof(JIF_SCAN_PARAM_jth));
             byte b;
-            dinfo->sample_per_MCU = 0;
+            dinfo->du_per_MCU = 0;
             int Cs;
             for(int j=0; j < Ns; j++){
                 Cs =jif_scan_next_byte(s); offset++;   /* Scan component selector */
@@ -363,16 +362,16 @@ bool dec_read_scan_header(pinfo dinfo, JIF_SCANNER * s){
                 dinfo->scan_jth_params[j].Td = ( b >> 4 );    /* Specifies one of four possible DC entropy coding table */
                 dinfo->scan_jth_params[j].Ta = ( 0x0f & b );  /* Specifies one of four possible AC entropy coding table */
                 
-                dinfo->sample_per_MCU += dinfo->f_para.comps[Cs].H * dinfo->f_para.comps[Cs].V;
+                dinfo->du_per_MCU += dinfo->f_para.comps[Cs].H * dinfo->f_para.comps[Cs].V;
             }
             
             if( Ns > 1 ) {
-                if( dinfo->sample_per_MCU > 10){
+                if( dinfo->du_per_MCU > 10){
                     err("sample_per_MCU=sum_j_( H * V ) should < 10");
                     return false;
                 }
             } else if ( 1 == Ns ){
-                dinfo->sample_per_MCU = 1;
+                dinfo->du_per_MCU = 1;
             }
             
         }
@@ -383,82 +382,75 @@ bool dec_read_scan_header(pinfo dinfo, JIF_SCANNER * s){
     return false;
 }
 
-void dec_reset_decoder(pinfo dinfo, JIF_SCANNER * s){
-    if(dinfo->is_use_arithmetic_coding){
-        /* dec_init() arithmetic decoder */
-    }
-    
-    if(dinfo->is_dct_based){
-        for(int j = 0; j< dinfo->scan_param.Ns; j++){
-            /* TODO : set DC components' PREC -> 0 */
-        }
-    }
-}
-
-// Data unit (in en/decoder) :
+// Data unit :
 //      A. 8x8 sample matrix ( DCT based process )
 //      B. 1 sample ( lossless process )
+unsigned int data_block_width(pinfo dinfo){
+    return dinfo->is_dct_based ? 8: 1;
+}
 
-void dec_decode_data_unit(pinfo dinfo, JIF_SCANNER * s){
+void dec_decode_data_unit(pinfo dinfo, JIF_SCANNER * s,
+                          unsigned int sj, unsigned int du_x, unsigned int du_y ){
     
-    uint8_t ZZ[DCTSIZE];    /* TODO: MCU buffer, tgt image */
-    
-    /* decode DC coeff, using DC table specified in scan header. */
-    ZZ[0] = PRED + DIFF;
-    
-    /* decode AC coeff, using AC table specified in scan header. */
-    int size = 2 * DCTSIZE_ROOT;
-    int i = 0,j = 0;
-    int s = 0; // sum
-    int c = 1;
-    for( s = 1 ; s < size ; s++ ) {
+    if ( dinfo->is_dct_based ){
+        uint8_t ZZ[DCTSIZE];    /* TODO: MCU buffer, tgt image */
         
-        if( s % 2 == 0 ){
-            // i decrease loop
-            for ( i = s; 0 <= i ; i--){
-                j = s - i;
-                if ( i < DCTSIZE_ROOT && j < DCTSIZE_ROOT ){
-                    //TODO ZZ(c++) =
-                }
+        /* decode DC coeff, using DC table specified in scan header. */
+        JIF_SCAN_PARAM_jth sp = dinfo->scan_jth_params[sj];
+//        JIF_COMPONENT_PARAM cp = dinfo->f_para.comps[sp.Cs];
+        huff_size T = jhuff_decode(dinfo->tH[sp.Td], s);
+        coeff_t DIFF = jhuff_receive(T, s);
+        DIFF = jhuff_extend(DIFF, T);
+        ZZ[0] = dinfo->dec_jth_stat[sj].PRED + DIFF;
+        
+        /* decode AC coeff, using AC table specified in scan header. */
+        for (unsigned int K = 1; K != 63; K++){
+            for( int i = 1; i < DCTSIZE; i++){
+                ZZ[i] = 0;
             }
-        } else {
-            // i increase loop
-            for ( i = 0; i <= s; i++){
-                j = s - i;
-                if ( i < DCTSIZE_ROOT && j < DCTSIZE_ROOT ){
-                    //TODO ZZ(c++) =
+            
+            huff_size RS = jhuff_decode(dinfo->tH[sp.Td], s);
+            coeff_t SSSS = RS % 16;
+            coeff_t RRRR = RS >> 4;
+            coeff_t R = RRRR;
+            
+            if ( 0 == SSSS ) {
+                if ( 15 == R ) {    /* 0xF0: a run length of 15 zero coefficients followed by a coefficient of zero amplitude */
+                    K += 15;
+                    continue;
+                } else {    /* EOB ? */
+                    break;
                 }
+            } else {
+                K += R;
+//                decode_ZZ(K);
+                ZZ[K] = jhuff_receive(SSSS, s);
+                ZZ[K] = jhuff_extend(ZZ[K], SSSS);
             }
         }
+        
+        /* dequantize using table destination specified in the frame header. */
+        
+        /* calculate 8 × 8 inverse DCT. */
     }
-    
-    
-    /* dequantize using table destination specified in the frame header. */
-    
-    /* calculate the inverse 8 × 8 DCT. */
 }
 
 void dec_decode_MCU(pinfo dinfo, JIF_SCANNER * s){
     
-    if(dinfo->is_dct_based){
-        /* TODO : Nb: number of data unit in a MCU */
-        int Nb = 0;
+    for ( int j = 0; j < dinfo->scan_param.Ns; j++){
+        JIF_SCAN_PARAM_jth sp = dinfo->scan_jth_params[j];
+        JIF_COMPONENT_PARAM cp = dinfo->f_para.comps[sp.Cs];
         
-        if (dinfo->scan_param.Ns == 1){ /* non interleaved */
-            Nb = 1;
-        } else {    /* calculate from current scan & frame */
-            for ( int i; i < dinfo->scan_param.Ns; i++){
-                JIF_SCAN_PARAM_jth sp = dinfo->scan_jth_params[i];
-                JIF_COMPONENT_PARAM cp = dinfo->f_para.comps[sp.Cs];
-                Nb += cp.H * cp.V;
+        for (int h = 0; h < cp.H; h++){
+            for (int v = 0; v < cp.V; v++){
+                int du_x = dinfo->dec_MCU_i * cp.H + h;    /* data unit x */
+                int du_y = dinfo->dec_MCU_i * cp.V + v;
+                dec_decode_data_unit(dinfo, s, j, du_x, du_y);
             }
         }
-        
-        /* decode */
-        for (int N = 0; N < Nb; N++){
-            dec_decode_data_unit(dinfo, s);
-        }
     }
+    
+    dinfo->dec_MCU_i++;
 }
 
 bool dec_read_DNL(pinfo dinfo, JIF_SCANNER *s ){
@@ -479,16 +471,11 @@ bool dec_read_DNL(pinfo dinfo, JIF_SCANNER *s ){
 }
 
 void dec_decode_restart_interval(pinfo dinfo, JIF_SCANNER * s, unsigned int Rm){
-    
+    /* reset on restart */
     if(dinfo->is_dct_based){
-        /* TODO set the DC prediction (PRED) to zero for all components in the scan */
-        /* Decoding model for DC coefficients
-         The decoded difference, DIFF, is added to PRED, the DC value from the most recently decoded 8 × 8 block from the same component. Thus ZZ(0) = PRED + DIFF.
-         At the beginning of the scan and at the beginning of each restart interval, the prediction for the DC coefficient is initialized to zero.
-         */
-        
         for(int j = 0; j < dinfo->scan_param.Ns; j++){
             int c = dinfo->scan_jth_params[j].Cs;
+            dinfo->dec_jth_stat[c].PRED = 0;
         }
     }
     
@@ -513,25 +500,6 @@ void dec_decode_restart_interval(pinfo dinfo, JIF_SCANNER * s, unsigned int Rm){
     }
 }
 
-unsigned int MCU_per_scan(pinfo dinfo){ /* number of MCU per scan */
-    unsigned int H , V , Cs, x, y, r;
-    
-    if( dinfo->is_dct_based ) {
-        r = 8;
-    } else {
-        r = 1;
-    }
-    /* for decoding, any component in the scan gives H and V (if encoding is normal) */
-    Cs = dinfo->scan_jth_params[0].Cs;
-    H = dinfo->f_para.comps[Cs].H;
-    V = dinfo->f_para.comps[Cs].V;
-    
-    x = dinfo->f_para.X / H / r;
-    y = dinfo->f_para.Y / V / r;
-    
-    return x * y;
-}
-
 /* note : a scan may enable restart interval Ri */
 bool dec_decode_scan(pinfo dinfo, JIF_SCANNER * s){
     if(M_SOS != jif_get_current_marker(s)){
@@ -543,14 +511,33 @@ bool dec_decode_scan(pinfo dinfo, JIF_SCANNER * s){
     }
     
     // How many intervals are there in this scan ?
-    // number = total MCU per scan / MCU per interval (Ri)
+    // expected number = total MCU per scan / MCU per interval (Ri)
     // A scan may choose some components
-    unsigned int mps = MCU_per_scan(dinfo);
-    unsigned int R = mps / dinfo->Ri;
-    unsigned int Rr = mps % dinfo->Ri;
+    
+    unsigned int H , V , Cs, X, Y, r;
+    
+    r = data_block_width(dinfo);
+    
+    for(int j = 0; j < dinfo->scan_param.Ns; j++){
+        Cs = dinfo->scan_jth_params[j].Cs;
+        H = dinfo->f_para.comps[Cs].H;
+        V = dinfo->f_para.comps[Cs].V;
+        
+        X = dinfo->f_para.X / H / r;    /* data units block */
+        Y = dinfo->f_para.Y / V / r;
+        
+        dinfo->MCU_per_scan = X * Y;    /* same for each component in scan */
+        
+        dinfo->dec_jth_stat[Cs].PRED = 0;
+    }
+    
+    unsigned int R = dinfo->MCU_per_scan / dinfo->scan_Ri;
+    unsigned int Rr = dinfo->MCU_per_scan % dinfo->scan_Ri;
+    
+    dinfo->dec_MCU_i = 0;
     
     for( int r = 0 ; r < R ; r++){
-        dec_decode_restart_interval(dinfo, s, dinfo->Ri);
+        dec_decode_restart_interval(dinfo, s, dinfo->scan_Ri);
     }
     
     if ( 0 != Rr){
@@ -558,16 +545,6 @@ bool dec_decode_scan(pinfo dinfo, JIF_SCANNER * s){
     }
     
     return true;
-}
-
-
-bool dec_reserve_MCU_buffer(pinfo dinfo, JIF_SCANNER * s_soi){
-    /* decide data unit number */
-    
-}
-
-bool dec_reserve_img_buffer(pinfo dinfo, JIF_SCANNER *s_soi){
-    dec_update_img_after_sof(dinfo);
 }
 
 bool j_dec_decode(pinfo dinfo){
@@ -581,7 +558,7 @@ bool j_dec_decode(pinfo dinfo){
     
     /*  TODO: now only support baseline DCT image. */
     while( jif_scan_next_maker_of(M_SOI, s_soi) ){
-        dinfo->Ri = 0;  /* SOI disable restart interval. Need a DRI to re-enable. */
+        dinfo->scan_Ri = 0;  /* SOI disable restart interval. Need a DRI to re-enable. */
         
         /* read tables | misc. */
         if (!dec_read_tables_misc(dinfo, s_soi)){
@@ -613,11 +590,8 @@ bool j_dec_decode(pinfo dinfo){
                     if(!dec_read_tables_misc(dinfo, s_soi))
                         break;
                     
-                    if(!dec_reserve_MCU_buffer(dinfo, s_soi))
-                        break;
-                    
-                    if(!dec_reserve_img_buffer(dinfo, s_soi))
-                        break;
+                    /* dec_reserve_img_buffer */
+                    dec_update_img_after_sof(dinfo);
                     
                     if(!dec_decode_scan(dinfo, s_soi))  /* first scan */
                         break;

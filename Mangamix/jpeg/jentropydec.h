@@ -19,7 +19,7 @@
 typedef uint8_t huff_size;
 typedef uint16_t huff_index;
 typedef int16_t huff_code;  /* F.2.2.3 */
-typedef uint8_t huff_val;
+typedef uint8_t huff_val;   /* B.2.4.2 (The meaning of each value is determined by the Huffman coding model) */
 
 /* Huffman table in JIF file */
 
