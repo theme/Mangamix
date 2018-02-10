@@ -348,7 +348,6 @@ size_t j_info_get_bmp_data_size(pinfo dinfo){
 
 
 bool dec_read_scan_header(pinfo dinfo, JIF_SCANNER * s){
-    // TODO read sos, set up decoding MCU cache ( 4:2:1 calculate )
     JIF_MARKER m = jif_get_current_marker(s);
     switch (m) {
         case M_SOS:
@@ -525,15 +524,13 @@ void dec_decode_restart_interval(pinfo dinfo, JIF_SCANNER * s, unsigned int Rm){
         /* optional error recovery : compare expected restart interval number to the one in the marker.
          * filling lost lines with some data.
          */
+        printf("%x @%llu RSTi\n", m, jif_get_offset(s));
         return;
     }
 }
 
 /* note : a scan may enable restart interval Ri */
 bool dec_decode_scan(pinfo dinfo, JIF_SCANNER * s){
-    if(M_SOS != jif_get_current_marker(s)){
-        return false;
-    }
         
     if(!dec_read_scan_header(dinfo, s)){
         return false;
@@ -614,27 +611,46 @@ bool j_dec_decode(pinfo dinfo){
             case M_SOF10:
             case M_SOF11:
                 dinfo->f_mode = JIF_FRAME_MODE_NONE_HIERARCHICAL;
-                if(dec_read_sof(dinfo, s_soi)){
+                if(dec_read_sof(dinfo, s_soi)){     /* frame.Y may not present */
                     if(!dec_read_tables_misc(dinfo, s_soi))
                         break;
                     
                     /* dec_reserve_img_buffer */
                     dec_update_img_after_sof(dinfo);
                     
-                    if(!dec_decode_scan(dinfo, s_soi))  /* first scan */
-                        break;
-                    
-                    if( 0 == dinfo->frame.Y ){ /* the number of line is defined by DNL after first scan. */
-                        if(M_DNL == jif_get_current_marker(s_soi)){
-                            dec_read_DNL(dinfo, s_soi);
+                    if(M_SOS != jif_get_current_marker(s_soi)){
+                        if( !jif_scan_next_maker_of(M_SOS, s_soi)){
+                            break;
                         }
-                    }
-                    
-                    while(dec_decode_scan(dinfo, s_soi)){   /* 2nd scan and on */
                         
+                        /* TODO:  1st scan, work based on frame.X  */
+                        if(!dec_decode_scan(dinfo, s_soi))
+                            break;
+                        
+                        success = true;
+                        
+                        /* DNL is expected if frame.Y is not defined in frame header. */
+                        if( 0 == dinfo->frame.Y ){
+                            if(M_DNL == jif_get_current_marker(s_soi)){
+                                printf("%x @%llu DNL\n", M_DNL, jif_get_offset(s_soi));
+                                dec_read_DNL(dinfo, s_soi);
+                                success = false;    /* more scan is coming */
+                            } else {
+                                err("lack of frame.Y, no DNL");
+                            }
+                        }
+                        
+                        /* EOI or more scan (after 1st scan) */
+                        if (M_EOI == jif_prob_next_marker(s_soi)){
+                            break;
+                        }
+                        
+                        while(jif_scan_next_maker_of(M_SOS, s_soi)){
+                            dec_decode_scan(dinfo, s_soi);
+                        }
+                        
+                        success = true;
                     }
-                    
-                    success = true;
                 }
                 break;
             default:
