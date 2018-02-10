@@ -19,8 +19,6 @@ JIMG * jimg_new(void){
         }
         img->X = 0;
         img->Y = 0;
-        img->Hm = 1;
-        img->Vm = 1;
     }
     return img;
 }
@@ -29,7 +27,7 @@ JIMG * jimg_set_components(JIMG * img, uint8_t index, uint16_t H, uint16_t V, un
     JIMG_COMPONENT * newp;
     if ( (newp = realloc(img->comps[index], sizeof(JIMG_COMPONENT)))) {
         img->comps[index] = newp;
-        newp->data = realloc(newp->data, sizeof(JIMG_SAMPLE) * H * V);
+        newp->data = realloc(newp->data, sizeof(JIMG_SAMPLE) * img->X * img->Y);
         if(!newp->data) {
             return NULL;
         }
@@ -40,6 +38,22 @@ JIMG * jimg_set_components(JIMG * img, uint8_t index, uint16_t H, uint16_t V, un
             img->num_of_components ++;
             img->comp_map[index] = true;
         }
+    }
+    
+    return img;
+}
+
+
+JIMG * jimg_write_sample(JIMG * img, uint8_t index, uint16_t x, uint16_t y, double s){
+    JIMG_COMPONENT * cp;
+    cp = img->comps[index];
+    
+    uint16_t smax = 1 << (cp->sample_precision - 1);
+    
+    if ( s < 0 ){
+        cp->data[y * img->Y + x] = 0;
+    } else if ( s > smax){
+        cp->data[y * img->Y + x] = smax;
     }
     
     return img;

@@ -48,10 +48,10 @@ bool dec_read_a_tbl_misc(pinfo dinfo, JIF_SCANNER *s){
                 for (int i = 0 ; i < 64 ; i++){
                     if ( 0 == Pq ){
                         uint8_t c = jif_scan_next_byte(s); offset++;
-                        dinfo->tQ[Tq].coeff_a.Q8[i] = c;
+                        dinfo->tQ[Tq].coeff_a[i] = c;
                     } else /* 1 == Pq */ {
                         uint16_t c = jif_scan_2_bytes(s); offset += 2;
-                        dinfo->tQ[Tq].coeff_a.Q16[i] = c;
+                        dinfo->tQ[Tq].coeff_a[i] = c;
                     }
                 }
             }
@@ -345,7 +345,8 @@ bool dec_read_scan_header(pinfo dinfo, JIF_SCANNER * s){
         case M_SOS:
             printf("%x @%llu SOS\n", m, jif_get_offset(s));
         {   /* scan header */
-            uint16_t Ls = jif_scan_2_bytes(s);
+//            uint16_t Ls = jif_scan_2_bytes(s);
+            jif_scan_2_bytes(s);
             uint16_t offset = 2;
             
             uint8_t Ns = jif_scan_next_byte(s); offset++;   /* number of image component in scan */
@@ -390,14 +391,13 @@ unsigned int data_block_width(pinfo dinfo){
 }
 
 void dec_decode_data_unit(pinfo dinfo, JIF_SCANNER * s,
-                          unsigned int sj, unsigned int du_x, unsigned int du_y ){
+                          unsigned int sj, unsigned int du_x   , unsigned int du_y ){
     
     if ( dinfo->is_dct_based ){
-        uint8_t ZZ[DCTSIZE];    /* TODO: MCU buffer, tgt image */
+        coeff_t ZZ[DCTSIZE];
         
         /* decode DC coeff, using DC table specified in scan header. */
         JIF_SCAN_PARAM_jth sp = dinfo->scan_jth_params[sj];
-//        JIF_COMPONENT_PARAM cp = dinfo->f_para.comps[sp.Cs];
         huff_size T = jhuff_decode(dinfo->tH[sp.Td], s);
         coeff_t DIFF = jhuff_receive(T, s);
         DIFF = jhuff_extend(DIFF, T);
@@ -409,7 +409,7 @@ void dec_decode_data_unit(pinfo dinfo, JIF_SCANNER * s,
                 ZZ[i] = 0;
             }
             
-            huff_size RS = jhuff_decode(dinfo->tH[sp.Td], s);
+            huff_size RS = jhuff_decode(dinfo->tH[sp.Ta], s);
             coeff_t SSSS = RS % 16;
             coeff_t RRRR = RS >> 4;
             coeff_t R = RRRR;
@@ -418,7 +418,7 @@ void dec_decode_data_unit(pinfo dinfo, JIF_SCANNER * s,
                 if ( 15 == R ) {    /* 0xF0: a run length of 15 zero coefficients followed by a coefficient of zero amplitude */
                     K += 15;
                     continue;
-                } else {    /* EOB ? */
+                } else {    /* EOB : all remaining coeff is 0 */
                     break;
                 }
             } else {
@@ -430,8 +430,29 @@ void dec_decode_data_unit(pinfo dinfo, JIF_SCANNER * s,
         }
         
         /* dequantize using table destination specified in the frame header. */
+        //Annex A
+        JIF_COMPONENT_PARAM cp = dinfo->f_para.comps[sp.Cs];
+        jquant_dequant(&dinfo->tQ[cp.Tq], ZZ);
         
         /* calculate 8 × 8 inverse DCT. */
+        //A.3.3
+        double IDCT[DCTWIDTH][DCTWIDTH];
+        j_idct_ZZ(IDCT, ZZ);
+        
+        /* level shift after IDCT */
+        uint16_t y, x;
+        for (y=0; y<DCTWIDTH; y++) {
+            for (x=0; x<DCTWIDTH; x++) {
+                IDCT[y][x] += 1 << (dinfo->f_para.P - 1);
+            }
+        }
+        
+        /* write to img */
+        for (y=0; y<DCTWIDTH; y++) {
+            for (x=0; x<DCTWIDTH; x++) {
+                jimg_write_sample(dinfo->img, sp.Cs, du_x + x, du_y + y, IDCT[y][x]);
+            }
+        }
     }
 }
 

@@ -15,6 +15,8 @@
 		A5500B231FF50D3400F5A216 /* jpegdec.c in Sources */ = {isa = PBXBuildFile; fileRef = A5500B211FF50D3400F5A216 /* jpegdec.c */; };
 		A591AEB2202D83AD009AC950 /* jquantdec.c in Sources */ = {isa = PBXBuildFile; fileRef = A591AEB1202D83AD009AC950 /* jquantdec.c */; };
 		A591AEB3202D83AD009AC950 /* jquantdec.c in Sources */ = {isa = PBXBuildFile; fileRef = A591AEB1202D83AD009AC950 /* jquantdec.c */; };
+		A591AEB6202E76C8009AC950 /* jdct.c in Sources */ = {isa = PBXBuildFile; fileRef = A591AEB5202E76C8009AC950 /* jdct.c */; };
+		A591AEB7202E76C8009AC950 /* jdct.c in Sources */ = {isa = PBXBuildFile; fileRef = A591AEB5202E76C8009AC950 /* jdct.c */; };
 		A59E93491FEE5778004A9F48 /* JifDecoder.m in Sources */ = {isa = PBXBuildFile; fileRef = A59E93481FEE5778004A9F48 /* JifDecoder.m */; };
 		A59E934A1FEE5778004A9F48 /* JifDecoder.m in Sources */ = {isa = PBXBuildFile; fileRef = A59E93481FEE5778004A9F48 /* JifDecoder.m */; };
 		A59E934E1FF3ED30004A9F48 /* ImageIO.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A59E934D1FF3ED2F004A9F48 /* ImageIO.framework */; };
@@ -60,6 +62,8 @@
 		A557EABD2004065C00893FDC /* jif.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = jif.h; sourceTree = "<group>"; };
 		A591AEB0202D83AD009AC950 /* jquantdec.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = jquantdec.h; sourceTree = "<group>"; };
 		A591AEB1202D83AD009AC950 /* jquantdec.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = jquantdec.c; sourceTree = "<group>"; };
+		A591AEB4202E76C8009AC950 /* jdct.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = jdct.h; sourceTree = "<group>"; };
+		A591AEB5202E76C8009AC950 /* jdct.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = jdct.c; sourceTree = "<group>"; };
 		A59E93471FEE5778004A9F48 /* JifDecoder.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = JifDecoder.h; sourceTree = "<group>"; };
 		A59E93481FEE5778004A9F48 /* JifDecoder.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = JifDecoder.m; sourceTree = "<group>"; };
 		A59E934D1FF3ED2F004A9F48 /* ImageIO.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = ImageIO.framework; path = System/Library/Frameworks/ImageIO.framework; sourceTree = SDKROOT; };
@@ -121,6 +125,8 @@
 				A51603F4201AE00A00DCD761 /* jimg.c */,
 				A51603F7201BA8EA00DCD761 /* jentropydec.h */,
 				A51603F8201BA8EA00DCD761 /* jentropydec.c */,
+				A591AEB4202E76C8009AC950 /* jdct.h */,
+				A591AEB5202E76C8009AC950 /* jdct.c */,
 				A591AEB0202D83AD009AC950 /* jquantdec.h */,
 				A591AEB1202D83AD009AC950 /* jquantdec.c */,
 				A5500B201FF50D3400F5A216 /* jpegdec.h */,
@@ -342,6 +348,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A591AEB6202E76C8009AC950 /* jdct.c in Sources */,
 				A5F71D1D1F83D11B00B045C9 /* ViewController.m in Sources */,
 				A5500B221FF50D3400F5A216 /* jpegdec.c in Sources */,
 				A5F71D251F83D11B00B045C9 /* main.m in Sources */,
@@ -362,6 +369,7 @@
 				A5500B231FF50D3400F5A216 /* jpegdec.c in Sources */,
 				A591AEB3202D83AD009AC950 /* jquantdec.c in Sources */,
 				A59E934A1FEE5778004A9F48 /* JifDecoder.m in Sources */,
+				A591AEB7202E76C8009AC950 /* jdct.c in Sources */,
 				A51603FA201BA8EA00DCD761 /* jentropydec.c in Sources */,
 				A5F71D301F83D11B00B045C9 /* MangamixTests.m in Sources */,
 				A5B8C0B320117109002A3E0D /* jif.c in Sources */,

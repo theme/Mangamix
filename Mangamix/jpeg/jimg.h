@@ -60,6 +60,7 @@ typedef struct {
 
 JIMG * jimg_new(void);
 JIMG * jimg_set_components(JIMG * img, uint8_t index, uint16_t X, uint16_t Y, unsigned int precision);
+JIMG * jimg_write_sample(JIMG * img, uint8_t index, uint16_t x, uint16_t y, double s);
 void jimg_free(JIMG * img);
 
 JIMG_BITMAP * jbmp_new(void);

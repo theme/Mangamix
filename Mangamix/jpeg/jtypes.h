@@ -15,4 +15,6 @@
 typedef unsigned char byte;
 
 
+typedef uint16_t coeff_t;
+
 #endif /* jtypes_h */
