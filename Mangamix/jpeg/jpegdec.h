@@ -123,7 +123,7 @@ typedef struct J_DEC_INFO {
     
     /* (per scan)  */
     JIF_SCAN            scan;
-    uint16_t            scan_Ri;        /* scan restart interval */
+    uint16_t            Ri;        /* scan restart interval */
     uint8_t             du_per_MCU;     /* data unit per MCU */
     uint16_t            MCU_per_scan;
     uint16_t            dec_MCU_i;

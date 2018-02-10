@@ -105,7 +105,7 @@ bool dec_read_a_tbl_misc(pinfo dinfo, JIF_SCANNER *s){
         {   uint16_t Lr = jif_scan_2_bytes(s);
             uint16_t offset = 2;
             if ( 4 != Lr ) {err("error DRI length\n");}
-            dinfo->scan_Ri = jif_scan_2_bytes(s);  offset+=2; /* restart interval is enabled if > 0 */
+            dinfo->Ri = jif_scan_2_bytes(s);  offset+=2; /* restart interval is enabled if > 0 */
         }
             break;
         case M_COM:
@@ -511,7 +511,7 @@ void dec_decode_restart_interval(pinfo dinfo, JIF_SCANNER * s, unsigned int Rm){
         dec_decode_MCU(dinfo, s);
     }
     
-    /* test next marker : RST or DNL */
+    /* RSTx or DNL : no more MCU in this interval */
     JIF_MARKER m = jif_get_current_marker(s);
     
     if (M_DNL == m){
@@ -556,13 +556,13 @@ bool dec_decode_scan(pinfo dinfo, JIF_SCANNER * s){
         dinfo->scan.comps[j].PRED = 0;
     }
     
-    unsigned int R = dinfo->MCU_per_scan / dinfo->scan_Ri;
-    unsigned int Rr = dinfo->MCU_per_scan % dinfo->scan_Ri;
+    unsigned int R = dinfo->MCU_per_scan / dinfo->Ri;
+    unsigned int Rr = dinfo->MCU_per_scan % dinfo->Ri;
     
     dinfo->dec_MCU_i = 0;
     
     for( int r = 0 ; r < R ; r++){
-        dec_decode_restart_interval(dinfo, s, dinfo->scan_Ri);
+        dec_decode_restart_interval(dinfo, s, dinfo->Ri);
     }
     
     if ( 0 != Rr){
@@ -583,7 +583,7 @@ bool j_dec_decode(pinfo dinfo){
     
     /*  TODO: now only support baseline DCT image. */
     while( jif_scan_next_maker_of(M_SOI, s_soi) ){
-        dinfo->scan_Ri = 0;  /* SOI disable restart interval. Need a DRI to re-enable. */
+        dinfo->Ri = 0;  /* SOI disable restart interval. */
         
         /* read tables | misc. */
         if (!dec_read_tables_misc(dinfo, s_soi)){
@@ -624,10 +624,11 @@ bool j_dec_decode(pinfo dinfo){
                         }
                         
                         /* TODO:  1st scan, work based on frame.X  */
-                        if(!dec_decode_scan(dinfo, s_soi))
+                        if(!dec_decode_scan(dinfo, s_soi)){
                             break;
-                        
-                        success = true;
+                        } else {
+                            success = true;
+                        }
                         
                         /* DNL is expected if frame.Y is not defined in frame header. */
                         if( 0 == dinfo->frame.Y ){
