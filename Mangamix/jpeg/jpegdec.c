@@ -516,7 +516,6 @@ void dec_decode_restart_interval(pinfo dinfo, JIF_SCANNER * s, unsigned int Rm){
         /* optional error recovery : compare expected restart interval number to the one in the marker.
          * filling lost lines with some data.
          */
-        
         return;
     }
 }

@@ -144,6 +144,7 @@ JTBL_HUFF * jtbl_huff_from_jif(JIF_HUFF * fh){
     return th;
 }
 
+
 huff_size jhuff_decode(JTBL_HUFF * th, JIF_SCANNER * s){
     
     int i = 1;
@@ -165,7 +166,9 @@ huff_val jhuff_receive(huff_size t, JIF_SCANNER * s){
     if ( 0 == t){
         return 0;
     }
-    
+    /* jif scan is based on byte = bit,
+     * so it is simple here.
+     */
     return jif_scan_t_bits(s, t);
 }
 

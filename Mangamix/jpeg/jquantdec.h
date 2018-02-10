@@ -11,7 +11,6 @@
 
 #include <stdio.h>
 #include "jtypes.h"
-#include "jentropydec.h"
 #include "jdct.h"
 
 /* DCT tables */

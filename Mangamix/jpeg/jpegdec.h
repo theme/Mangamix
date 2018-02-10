@@ -86,6 +86,7 @@
 #include "jif.h"
 #include "jimg.h"
 #include "jquantdec.h"
+#include "jentropydec.h"
 
 #define err(S) fprintf(stderr, S)
 #define logger(S) printf(S)
