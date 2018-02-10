@@ -119,22 +119,15 @@ typedef struct J_DEC_INFO {
     
     /* (per frame) frame and component */
     JIF_FRAME_MODE      f_mode;     /* got from tables/misc. segments after SOI */
-    JIF_FRAME_PARAM     f_para;
+    JIF_FRAME           frame;
     
     /* (per scan)  */
-    JIF_SCAN_PARAM      scan_param;
-    JIF_SCAN_PARAM_jth * scan_jth_params;
+    JIF_SCAN            scan;
     uint16_t            scan_Ri;        /* scan restart interval */
     uint8_t             du_per_MCU;     /* data unit per MCU */
     uint16_t            MCU_per_scan;
     uint16_t            dec_MCU_i;
     
-    /* (per decode MCU) */
-    struct jdec_comp_stat {
-        coeff_t PRED;   /* latest decoded DC */
-        
-    }                   dec_jth_stat[10];   /* comp id as subscript */
-
     /* (for decoder) other info */
     J_ERR           err;
 } * pinfo;

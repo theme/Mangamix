@@ -17,6 +17,7 @@
 #include <string.h> /* memcpy() */
 
 #include "jtypes.h"
+#include "jdct.h"
 
 typedef unsigned long long jif_offset;  /* offset in side array of target file */
 
@@ -100,13 +101,41 @@ typedef enum {
 } JIF_MARKER;
 
 
-/* M_SOF Frame */
+/* Frame */
+
+typedef enum {
+    JIF_FRAME_MODE_ABBR_TABLE,          /* Abbreviated format for table-spec  (not a image) */
+    JIF_FRAME_MODE_HIERARCHICAL,        /* Jif contains a DHP marker segment before non-differential frame or frames. */
+    JIF_FRAME_MODE_NONE_HIERARCHICAL
+} JIF_FRAME_MODE;
+
 typedef struct  {
     unsigned int C:8;     /* Component identifier */
     unsigned int H:4;     /* 1 ~ 4, Horizontal sampling factor: (component horizontal dimension) / X */
     unsigned int V:4;     /* 1 ~ 4, Vertical sampling factor: (component vertical dimension) / Y */
     unsigned int Tq:8;    /* Quantization table destination selector */
-} JIF_COMPONENT_PARAM;    /* pointer to array of SOF_COMP */
+} JIF_FRAME_COMPONENT;    /* pointer to array of SOF_COMP */
+
+typedef uint16_t width_t;
+
+typedef struct {
+    unsigned int Lf;            /* Frame header length */
+    unsigned int P;             /* Sample precision */
+    width_t Y;             /* max Number of sample lines in source image */
+    width_t X;             /* max Number of samples per line */
+    unsigned int Nf;            /* Number of image components in frame ( 1 ~ 255 ) */
+    JIF_FRAME_COMPONENT * comps;    /* ( in this frame ) */
+    JIF_FRAME_MODE mode;
+} JIF_FRAME;
+
+
+/* Scan */
+typedef struct {
+    unsigned int Cs:8;    /* scan component selector */
+    unsigned int Td:4;    /* DC entropy coding table selector */
+    unsigned int Ta:4;    /* AC entropy coding table selector */
+    coeff_t PRED;         /* codec helper: latest decoded DC */
+} JIF_SCAN_COMPONENT;
 
 typedef struct {
     unsigned int Ls:16;     /* length of Scan Header */
@@ -115,31 +144,9 @@ typedef struct {
     unsigned int Se:8;      /* End of spectral selection */
     unsigned int Ah:4;      /* Successive approximation bit position high */
     unsigned int Al:4;      /* Successive approximation bit position low or point transform */
-} JIF_SCAN_PARAM;
-
-typedef uint16_t width_t;
-
-typedef struct {
-    unsigned int Cs:8;    /* scan component selector */
-    unsigned int Td:4;    /* DC entropy coding table selector */
-    unsigned int Ta:4;    /* AC entropy coding table selector */
-} JIF_SCAN_PARAM_jth;
-
-
-typedef struct {
-    unsigned int Lf;            /* Frame header length */
-    unsigned int P;             /* Sample precision */
-    width_t Y;             /* max Number of sample lines in source image */
-    width_t X;             /* max Number of samples per line */
-    unsigned int Nf;            /* Number of image components in frame ( 1 ~ 255 ) */
-    JIF_COMPONENT_PARAM * comps;    /* ( in this frame ) */
-} JIF_FRAME_PARAM;
-
-typedef enum {
-    JIF_FRAME_MODE_ABBR_TABLE,          /* Abbreviated format for table-spec  (not a image) */
-    JIF_FRAME_MODE_HIERARCHICAL,        /* Jif contains a DHP marker segment before non-differential frame or frames. */
-    JIF_FRAME_MODE_NONE_HIERARCHICAL
-} JIF_FRAME_MODE;
+    
+    JIF_SCAN_COMPONENT * comps;
+} JIF_SCAN;
 
 typedef struct jif_scanner {
     byte * pjif;

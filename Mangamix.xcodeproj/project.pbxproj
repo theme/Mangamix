@@ -119,14 +119,14 @@
 			isa = PBXGroup;
 			children = (
 				A51603FF201BA9D700DCD761 /* jtypes.h */,
+				A591AEB4202E76C8009AC950 /* jdct.h */,
+				A591AEB5202E76C8009AC950 /* jdct.c */,
 				A557EABD2004065C00893FDC /* jif.h */,
 				A5B8C0B120117109002A3E0D /* jif.c */,
 				A51603F3201AE00A00DCD761 /* jimg.h */,
 				A51603F4201AE00A00DCD761 /* jimg.c */,
 				A51603F7201BA8EA00DCD761 /* jentropydec.h */,
 				A51603F8201BA8EA00DCD761 /* jentropydec.c */,
-				A591AEB4202E76C8009AC950 /* jdct.h */,
-				A591AEB5202E76C8009AC950 /* jdct.c */,
 				A591AEB0202D83AD009AC950 /* jquantdec.h */,
 				A591AEB1202D83AD009AC950 /* jquantdec.c */,
 				A5500B201FF50D3400F5A216 /* jpegdec.h */,

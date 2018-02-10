@@ -13,8 +13,8 @@ pinfo j_dec_new(void) {
     pinfo p = (pinfo) calloc(1, sizeof(struct J_DEC_INFO));
     p->img = jimg_new();
     p->bmp = jbmp_new();
-    p->f_para.comps = malloc(0);  /* so that dec_read_sof() can freely realloc memory on it, and free. */
-    p->scan_jth_params = malloc(0);
+    p->frame.comps = malloc(0);  /* so that dec_read_sof() can freely realloc memory on it, and free. */
+    p->scan.comps = malloc(0);
     
     for(int i =0; i < JTBL_NUM; i++){
         p->jH[i] = jif_huff_new();
@@ -27,6 +27,15 @@ bool j_dec_set_src_array(unsigned char *src, unsigned long long size, pinfo dinf
     dinfo->src_size = size;
     return true;
 };
+
+JIF_FRAME_COMPONENT * frame_comp(pinfo dinfo, uint8_t Csj){
+    for ( int j = 0 ; j < dinfo->frame.Nf; j++ ){
+        if ( Csj == dinfo->frame.comps[j].C) {
+            return &dinfo->frame.comps[j];
+        }
+    }
+    return NULL;
+}
 
 /* private: read top level tables|misc. */
 bool dec_read_a_tbl_misc(pinfo dinfo, JIF_SCANNER *s){
@@ -194,22 +203,22 @@ bool dec_read_sof(pinfo dinfo, JIF_SCANNER * s){
         case M_SOF11:
             printf("%x @%llu SOF%d\n", m, jif_get_offset(s), m-M_SOF0);
         {
-            dinfo->f_para.Lf = jif_scan_2_bytes(s);
-            dinfo->f_para.P = jif_scan_next_byte(s);    /* sample precision of components in frame */
-            dinfo->f_para.Y = jif_scan_2_bytes(s);
-            dinfo->f_para.X = jif_scan_2_bytes(s);
-            dinfo->f_para.Nf = jif_scan_next_byte(s);
-            dinfo->f_para.comps = realloc(dinfo->f_para.comps, dinfo->f_para.Nf*sizeof(JIF_COMPONENT_PARAM));
+            dinfo->frame.Lf = jif_scan_2_bytes(s);
+            dinfo->frame.P = jif_scan_next_byte(s);    /* sample precision of components in frame */
+            dinfo->frame.Y = jif_scan_2_bytes(s);
+            dinfo->frame.X = jif_scan_2_bytes(s);
+            dinfo->frame.Nf = jif_scan_next_byte(s);
+            dinfo->frame.comps = realloc(dinfo->frame.comps, dinfo->frame.Nf * sizeof(JIF_FRAME_COMPONENT));
             
             byte b, H, V;
-            for(int i = 0; i < dinfo->f_para.Nf; i++){
-                dinfo->f_para.comps[i].C = jif_scan_next_byte(s);
+            for(int i = 0; i < dinfo->frame.Nf; i++){
+                dinfo->frame.comps[i].C = jif_scan_next_byte(s);
                 b = jif_scan_next_byte(s);
                 H = b >> 4;
                 V = 0x0f & b;
-                dinfo->f_para.comps[i].H = H;
-                dinfo->f_para.comps[i].V = V;
-                dinfo->f_para.comps[i].Tq = jif_scan_next_byte(s);
+                dinfo->frame.comps[i].H = H;
+                dinfo->frame.comps[i].V = V;
+                dinfo->frame.comps[i].Tq = jif_scan_next_byte(s);
             }
             
             return true;
@@ -223,29 +232,29 @@ bool dec_read_sof(pinfo dinfo, JIF_SCANNER * s){
 
 
 void dec_update_img_after_sof (pinfo dinfo){
-    JIF_COMPONENT_PARAM * p;
-    for(int i = 0; i < dinfo->f_para.Nf; i++){
-        p = &dinfo->f_para.comps[i];
-        jimg_set_components(dinfo->img, p->C, p->H, p->V, dinfo->f_para.P);
+    JIF_FRAME_COMPONENT * p;
+    for(int i = 0; i < dinfo->frame.Nf; i++){
+        p = &dinfo->frame.comps[i];
+        jimg_set_components(dinfo->img, p->C, p->H, p->V, dinfo->frame.P);
     }
-    dinfo->img->X = dinfo->f_para.X;
-    dinfo->img->Y = dinfo->f_para.Y;
+    dinfo->img->X = dinfo->frame.X;
+    dinfo->img->Y = dinfo->frame.Y;
 }
 
 void dec_update_bmp_after_sof (pinfo dinfo){
     
     JIMG_BITMAP b = *dinfo->bmp;
     
-    if ( b.width < dinfo->f_para.X )
-        b.width = dinfo->f_para.X;
+    if ( b.width < dinfo->frame.X )
+        b.width = dinfo->frame.X;
     
-    if ( b.height < dinfo->f_para.Y )
-        b.height = dinfo->f_para.Y;
+    if ( b.height < dinfo->frame.Y )
+        b.height = dinfo->frame.Y;
     
     dec_update_img_after_sof(dinfo);
     
-    b.bits_per_component = dinfo->f_para.P;
-    b.bits_per_pixel = dinfo->f_para.P * dinfo->img->num_of_components;
+    b.bits_per_component = dinfo->frame.P;
+    b.bits_per_pixel = dinfo->frame.P * dinfo->img->num_of_components;
     
 }
 
@@ -350,20 +359,21 @@ bool dec_read_scan_header(pinfo dinfo, JIF_SCANNER * s){
             uint16_t offset = 2;
             
             uint8_t Ns = jif_scan_next_byte(s); offset++;   /* number of image component in scan */
-            dinfo->scan_param.Ns = Ns;
-            dinfo->scan_jth_params = realloc(dinfo->scan_jth_params,
-                                                    Ns * sizeof(JIF_SCAN_PARAM_jth));
+            dinfo->scan.Ns = Ns;
+            dinfo->scan.comps = realloc(dinfo->scan.comps,
+                                        Ns * sizeof(JIF_SCAN_COMPONENT));
             byte b;
             dinfo->du_per_MCU = 0;
             int Cs;
             for(int j=0; j < Ns; j++){
                 Cs =jif_scan_next_byte(s); offset++;   /* Scan component selector */
-                dinfo->scan_jth_params[j].Cs = Cs;
+                dinfo->scan.comps[j].Cs = Cs;
                 b = jif_scan_next_byte(s); offset++;
-                dinfo->scan_jth_params[j].Td = ( b >> 4 );    /* Specifies one of four possible DC entropy coding table */
-                dinfo->scan_jth_params[j].Ta = ( 0x0f & b );  /* Specifies one of four possible AC entropy coding table */
+                dinfo->scan.comps[j].Td = ( b >> 4 );    /* Specifies one of four possible DC entropy coding table */
+                dinfo->scan.comps[j].Ta = ( 0x0f & b );  /* Specifies one of four possible AC entropy coding table */
                 
-                dinfo->du_per_MCU += dinfo->f_para.comps[Cs].H * dinfo->f_para.comps[Cs].V;
+                JIF_FRAME_COMPONENT * c = frame_comp(dinfo, Cs);
+                dinfo->du_per_MCU += c->H * c->V;
             }
             
             if( Ns > 1 ) {
@@ -397,11 +407,11 @@ void dec_decode_data_unit(pinfo dinfo, JIF_SCANNER * s,
         coeff_t ZZ[DCTSIZE];
         
         /* decode DC coeff, using DC table specified in scan header. */
-        JIF_SCAN_PARAM_jth sp = dinfo->scan_jth_params[sj];
-        huff_size T = jhuff_decode(dinfo->tH[sp.Td], s);
+        JIF_SCAN_COMPONENT * sp = &dinfo->scan.comps[sj];
+        huff_size T = jhuff_decode(dinfo->tH[sp->Td], s);
         coeff_t DIFF = jhuff_receive(T, s);
         DIFF = jhuff_extend(DIFF, T);
-        ZZ[0] = dinfo->dec_jth_stat[sj].PRED + DIFF;
+        ZZ[0] = sp->PRED + DIFF;
         
         /* decode AC coeff, using AC table specified in scan header. */
         for (unsigned int K = 1; K != 63; K++){
@@ -409,7 +419,7 @@ void dec_decode_data_unit(pinfo dinfo, JIF_SCANNER * s,
                 ZZ[i] = 0;
             }
             
-            huff_size RS = jhuff_decode(dinfo->tH[sp.Ta], s);
+            huff_size RS = jhuff_decode(dinfo->tH[sp->Ta], s);
             coeff_t SSSS = RS % 16;
             coeff_t RRRR = RS >> 4;
             coeff_t R = RRRR;
@@ -423,7 +433,6 @@ void dec_decode_data_unit(pinfo dinfo, JIF_SCANNER * s,
                 }
             } else {
                 K += R;
-//                decode_ZZ(K);
                 ZZ[K] = jhuff_receive(SSSS, s);
                 ZZ[K] = jhuff_extend(ZZ[K], SSSS);
             }
@@ -431,8 +440,8 @@ void dec_decode_data_unit(pinfo dinfo, JIF_SCANNER * s,
         
         /* dequantize using table destination specified in the frame header. */
         //Annex A
-        JIF_COMPONENT_PARAM cp = dinfo->f_para.comps[sp.Cs];
-        jquant_dequant(&dinfo->tQ[cp.Tq], ZZ);
+        JIF_FRAME_COMPONENT * cp = frame_comp(dinfo, dinfo->scan.comps[sj].Cs);
+        jquant_dequant(&(dinfo->tQ[cp->Tq]), ZZ);
         
         /* calculate 8 × 8 inverse DCT. */
         //A.3.3
@@ -443,14 +452,14 @@ void dec_decode_data_unit(pinfo dinfo, JIF_SCANNER * s,
         uint16_t y, x;
         for (y=0; y<DCTWIDTH; y++) {
             for (x=0; x<DCTWIDTH; x++) {
-                IDCT[y][x] += 1 << (dinfo->f_para.P - 1);
+                IDCT[y][x] += 1 << (dinfo->frame.P - 1);
             }
         }
         
         /* write to img */
         for (y=0; y<DCTWIDTH; y++) {
             for (x=0; x<DCTWIDTH; x++) {
-                jimg_write_sample(dinfo->img, sp.Cs, du_x + x, du_y + y, IDCT[y][x]);
+                jimg_write_sample(dinfo->img, sp->Cs, du_x + x, du_y + y, IDCT[y][x]);
             }
         }
     }
@@ -458,14 +467,14 @@ void dec_decode_data_unit(pinfo dinfo, JIF_SCANNER * s,
 
 void dec_decode_MCU(pinfo dinfo, JIF_SCANNER * s){
     
-    for ( int j = 0; j < dinfo->scan_param.Ns; j++){
-        JIF_SCAN_PARAM_jth sp = dinfo->scan_jth_params[j];
-        JIF_COMPONENT_PARAM cp = dinfo->f_para.comps[sp.Cs];
+    for ( int j = 0; j < dinfo->scan.Ns; j++){
+        JIF_SCAN_COMPONENT sp = dinfo->scan.comps[j];
+        JIF_FRAME_COMPONENT * cp = frame_comp(dinfo, sp.Cs);
         
-        for (int h = 0; h < cp.H; h++){
-            for (int v = 0; v < cp.V; v++){
-                int du_x = dinfo->dec_MCU_i * cp.H + h;    /* data unit x */
-                int du_y = dinfo->dec_MCU_i * cp.V + v;
+        for (int h = 0; h < cp->H; h++){
+            for (int v = 0; v < cp->V; v++){
+                int du_x = dinfo->dec_MCU_i * cp->H + h;    /* data unit x */
+                int du_y = dinfo->dec_MCU_i * cp->V + v;
                 dec_decode_data_unit(dinfo, s, j, du_x, du_y);
             }
         }
@@ -482,8 +491,8 @@ bool dec_read_DNL(pinfo dinfo, JIF_SCANNER *s ){
         return false;
     }
     uint8_t NL = jif_scan_2_bytes(s); offset+=2;   /* number of image component in scan */
-    if( 0 == dinfo->f_para.Y ){
-        dinfo->f_para.Y = NL;
+    if( 0 == dinfo->frame.Y ){
+        dinfo->frame.Y = NL;
     } else {
         err("err: redefine max number of lines in image.\n");
         return false;
@@ -494,9 +503,8 @@ bool dec_read_DNL(pinfo dinfo, JIF_SCANNER *s ){
 void dec_decode_restart_interval(pinfo dinfo, JIF_SCANNER * s, unsigned int Rm){
     /* reset on restart */
     if(dinfo->is_dct_based){
-        for(int j = 0; j < dinfo->scan_param.Ns; j++){
-            int c = dinfo->scan_jth_params[j].Cs;
-            dinfo->dec_jth_stat[c].PRED = 0;
+        for(int j = 0; j < dinfo->scan.Ns; j++){
+            dinfo->scan.comps[j].PRED = 0;
         }
     }
     
@@ -508,6 +516,7 @@ void dec_decode_restart_interval(pinfo dinfo, JIF_SCANNER * s, unsigned int Rm){
     JIF_MARKER m = jif_get_current_marker(s);
     
     if (M_DNL == m){
+        printf("%x @%llu DNL\n", m, jif_get_offset(s));
         dec_read_DNL(dinfo, s);
         return;
     }
@@ -534,21 +543,20 @@ bool dec_decode_scan(pinfo dinfo, JIF_SCANNER * s){
     // expected number = total MCU per scan / MCU per interval (Ri)
     // A scan may choose some components
     
-    unsigned int H , V , Cs, X, Y, r;
+    unsigned int X, Y, r;
     
     r = data_block_width(dinfo);
     
-    for(int j = 0; j < dinfo->scan_param.Ns; j++){
-        Cs = dinfo->scan_jth_params[j].Cs;
-        H = dinfo->f_para.comps[Cs].H;
-        V = dinfo->f_para.comps[Cs].V;
+    for(int j = 0; j < dinfo->scan.Ns; j++){
+        JIF_SCAN_COMPONENT * sc =  &dinfo->scan.comps[j];
+        JIF_FRAME_COMPONENT * fc = frame_comp(dinfo, sc->Cs);
         
-        X = dinfo->f_para.X / H / r;    /* data units block */
-        Y = dinfo->f_para.Y / V / r;
+        X = dinfo->frame.X / fc->H / r;    /* data units block */
+        Y = dinfo->frame.Y / fc->V / r;
         
         dinfo->MCU_per_scan = X * Y;    /* same for each component in scan */
         
-        dinfo->dec_jth_stat[Cs].PRED = 0;
+        dinfo->scan.comps[j].PRED = 0;
     }
     
     unsigned int R = dinfo->MCU_per_scan / dinfo->scan_Ri;
@@ -616,7 +624,7 @@ bool j_dec_decode(pinfo dinfo){
                     if(!dec_decode_scan(dinfo, s_soi))  /* first scan */
                         break;
                     
-                    if( 0 == dinfo->f_para.Y ){ /* the number of line is defined by DNL after first scan. */
+                    if( 0 == dinfo->frame.Y ){ /* the number of line is defined by DNL after first scan. */
                         if(M_DNL == jif_get_current_marker(s_soi)){
                             dec_read_DNL(dinfo, s_soi);
                         }
@@ -651,7 +659,7 @@ void j_info_release_bmp_data(void *info, const void *data, size_t size){
 void j_dec_destroy(pinfo dinfo){
     jimg_free(dinfo->img);
     jbmp_free(dinfo->bmp);
-    free(dinfo->f_para.comps);
-    free(dinfo->scan_jth_params);
+    free(dinfo->frame.comps);
+    free(dinfo->scan.comps);
     free(dinfo);
 }
