@@ -252,23 +252,9 @@ void dec_update_img_after_sof (pinfo dinfo){
                             dinfo->frame.Y * p->V / Vmax,
                             dinfo->frame.P);
     }
-}
-
-void dec_update_bmp_after_sof (pinfo dinfo){
     
-    JBMP * b = dinfo->bmp;
-    
-    if ( b->width < dinfo->frame.X )
-        b->width = dinfo->frame.X;
-    
-    if ( b->height < dinfo->frame.Y )
-        b->height = dinfo->frame.Y;
-    
-    dec_update_img_after_sof(dinfo);
-    
-    b->bits_per_component = dinfo->frame.P;
-    b->bits_per_pixel = dinfo->frame.P * dinfo->img->num_of_components;
-    
+    dinfo->img->X = dinfo->frame.X;
+    dinfo->img->Y = dinfo->frame.Y;
 }
 
 /* private: try read one sof marker. */
