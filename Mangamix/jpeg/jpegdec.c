@@ -411,7 +411,7 @@ unsigned int data_unit_width(pinfo dinfo){
 }
 
 JERR dec_decode_data_unit(pinfo dinfo, JIF_SCANNER * s,
-                          unsigned int sj, unsigned int du_x   , unsigned int du_y ){
+                          unsigned int sj, unsigned int du_x, unsigned int du_y ){
     
     if ( dinfo->is_dct_based ){
         coeff_t ZZ[DCTSIZE];
@@ -487,7 +487,10 @@ JERR dec_decode_data_unit(pinfo dinfo, JIF_SCANNER * s,
         /* write to img */
         for (y=0; y<DCTWIDTH; y++) {
             for (x=0; x<DCTWIDTH; x++) {
-                jimg_write_sample(dinfo->img, sp->Cs, du_x + x, du_y + y, IDCT[y][x]); // TODO: ???
+                jimg_write_sample(dinfo->img, sp->Cs,
+                                  du_x * data_unit_width(dinfo) + x,
+                                  du_y * data_unit_width(dinfo) + y,
+                                  IDCT[y][x]);
             }
         }
     }
@@ -503,7 +506,7 @@ JERR dec_decode_MCU(pinfo dinfo, JIF_SCANNER * s){
         JIF_SCAN_COMPONENT sp = dinfo->scan.comps[j];
         JIF_FRAME_COMPONENT * cp = frame_comp(dinfo, sp.Cs);
         
-        int du_x, du_y; /* data unit DC sample x, y within component */
+        int du_x, du_y; /* data unit (not sample) x, y within component */
         int mcu_Xn = dinfo->frame.X / data_unit_width(dinfo) / cp->H ; /* number of MCU | data block in a row */
         int mcu_x = dinfo->m % mcu_Xn;
         int mcu_y = dinfo->m / mcu_Xn;
@@ -512,8 +515,8 @@ JERR dec_decode_MCU(pinfo dinfo, JIF_SCANNER * s){
         for (int h = 0; h < cp->H; h++){
             for (int v = 0; v < cp->V; v++){
                 
-                dc_x = mcu_x * cp->H + h;    /* data unit x */
-                dc_y = mcu_y * cp->V + v;
+                du_x = mcu_x * cp->H + h;    /* data unit x */
+                du_y = mcu_y * cp->V + v;
                 e = dec_decode_data_unit(dinfo, s, j, du_x, du_y);
                 if (JERR_NONE != e){
                     return e;

@@ -33,7 +33,7 @@ JIMG * jimg_set_components(JIMG * img, uint8_t index, uint16_t X, uint16_t Y, un
         }
         newp->X = X;
         newp->Y = Y;
-        newp->sample_precision = precision;
+        newp->precision = precision;
         if( false == img->comp_map[index] ){
             img->num_of_components ++;
             img->comp_map[index] = true;
@@ -45,19 +45,15 @@ JIMG * jimg_set_components(JIMG * img, uint8_t index, uint16_t X, uint16_t Y, un
 
 
 JIMG * jimg_write_sample(JIMG * img, uint8_t index, uint16_t x, uint16_t y, double s){
-    JIMG_COMPONENT * cp;
-    cp = img->comps[index];
-    
-    uint16_t smax = 1 << (cp->sample_precision - 1);
+    uint16_t smax = 1 << (img->comps[index]->precision - 1);
     
     if ( s < 0 ){
-        cp->data[y * img->Y + x] = 0;
+         s = 0;
     } else if ( s > smax){
-        cp->data[y * img->Y + x] = smax;
-    } else {
-        cp->data[y * img->Y + x] = s;
+        s = smax;
     }
     
+    img->comps[index]->data[x * img->Y + y] = s;
     return img;
 }
 
@@ -100,38 +96,26 @@ void jbmp_make_RGB24(JIMG * img, JBMP * bmp){
     }
     
     JIMG_COMPONENT * cp;
+    int cpi, bi;
     if ( 1 == c ) {
         cp = comps[0];
         for (int j = 0 ; j < bmp->height; j++) {
             for( int i=0; i < bmp->width; i++ ){
-                int p = j*bmp->width + i;   /* pixel index */
-                int b = p * 3;      /* byte index */
-                bmp->data[b] = cp->data[p];     /* R */
-                bmp->data[b+1] = cp->data[p];   /* G */
-                bmp->data[b+2] = cp->data[p];   /* B */
+                bi = j * bmp->width + i;
+                cpi = j * (cp->Y / bmp->height) + i * (cp->X / bmp->width);
+                bmp->data[bi] = cp->data[cpi];     /* R */
+                bmp->data[bi+1] = cp->data[cpi];   /* G */
+                bmp->data[bi+2] = cp->data[cpi];   /* B */
             }
         }
     } else if ( 3 == c ) {
-        int maxH=1, maxV=1;
-        for (int i = 0; i < 3; i++ ){
-            cp = comps[i];
-            if ( maxH < cp->H ){
-                maxH = cp->H;
-            }
-            if ( maxV < cp->V ){
-                maxV = cp->V;
-            }
-        }
-        
         for (int j = 0 ; j < bmp->height; j++) {
             for( int i=0; i < bmp->width; i++ ){
                 for ( int k = 0; k < c; k++ ){
                     cp = comps[k];
-                    int p = j * bmp->width * cp->V / maxV + i * cp->H / maxH;   /* pixel index */
-                    int b = p * 3;      /* byte index */
-                    bmp->data[b] = cp->data[p];     /* R */
-                    bmp->data[b+1] = cp->data[p];   /* G */
-                    bmp->data[b+2] = cp->data[p];   /* B */
+                    bi = j * bmp->width + i;
+                    cpi = j * (cp->Y / bmp->height) + i * (cp->X / bmp->width);
+                    bmp->data[bi + k] = cp->data[cpi];     /* R, G, B */
                 }
             }
         }
