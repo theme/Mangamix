@@ -145,31 +145,83 @@ JTBL_HUFF * jtbl_huff_from_jif(JIF_HUFF * fh){
 }
 
 
-huff_size jhuff_decode(JTBL_HUFF * th, JIF_SCANNER * s){
+JHUFF_ERR nextbit(JIF_SCANNER * s){
+    byte bit, b2;
+    if ( 0 == s->bit_cnt){
+        s->bit_B = jif_scan_next_byte(s);
+        s->bit_cnt = 8;
+        if ( 0xFF == s->bit_B ){
+            b2 = jif_scan_next_byte(s);
+            if ( 0x00 != b2 ){
+                if ( M_DNL == b2 ){
+                    return JHUFF_ERR_DNL;
+                } else {
+                    return JHUFF_ERR_UNKNOWN;
+                }
+            }
+        }
+    }
+    
+    bit = s->bit_B >> 7;
+    s->bit_cnt--;
+    s->bit_B <<= 1;
+    return JHUFF_ERR_NONE;
+}
+
+JHUFF_ERR jhuff_decode(JTBL_HUFF * th, JIF_SCANNER * s, huff_size *t){
     
     int i = 1;
     
-    huff_code c = jif_scan_next_bit(s);
+    JHUFF_ERR e = nextbit(s);
+    
+    if ( JHUFF_ERR_NONE != e ){
+        return e;
+    }
+    
+    huff_code c = s->bit_nextbit;
     
     while( c > th->maxcode[i] ){
         i++;
-        c = (c << 1) + jif_scan_next_bit(s);
+        
+        e = nextbit(s);
+        
+        if ( JHUFF_ERR_NONE != e ){
+            return e;
+        }
+        
+        c = (c << 1) + s->bit_nextbit;
         
     }
     
     huff_index j = th->valptr[i];
     j = j + c - th->mincode[i];
-    return th->v[j].value;
+    *t = th->v[j].value;
+    
+    return  JHUFF_ERR_NONE;
 }
 
-huff_val jhuff_receive(huff_size t, JIF_SCANNER * s){
+
+JHUFF_ERR jhuff_receive(huff_size t, JIF_SCANNER * s, huff_val * v){
     if ( 0 == t){
-        return 0;
+        return JHUFF_ERR_UNKNOWN;
     }
-    /* jif scan is based on byte = bit,
-     * so it is simple here.
+    
+    /* jif scan should based on byte,
+     * let jhuff_receive based on NEXTBIT, which handle EOB.
      */
-    return jif_scan_t_bits(s, t);
+    
+    *v = 0x00;
+    JHUFF_ERR e = JHUFF_ERR_NONE;
+    for ( int i = 0; i < t; i ++ ){
+        if ( JHUFF_ERR_NONE != (e = nextbit(s))) {
+            break;
+        }
+        
+        *v <<= 1;
+        *v += s->bit_nextbit;
+    }
+    
+    return e;
 }
 
 huff_val jhuff_extend(huff_val v, huff_size t) {

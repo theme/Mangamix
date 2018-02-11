@@ -100,7 +100,6 @@ typedef enum {
     M_COM = 0xfe /* Comment */
 } JIF_MARKER;
 
-
 /* Frame */
 
 typedef enum {
@@ -128,7 +127,6 @@ typedef struct {
     JIF_FRAME_MODE mode;
 } JIF_FRAME;
 
-
 /* Scan */
 typedef struct {
     unsigned int Cs:8;    /* scan component selector */
@@ -144,7 +142,6 @@ typedef struct {
     unsigned int Se:8;      /* End of spectral selection */
     unsigned int Ah:4;      /* Successive approximation bit position high */
     unsigned int Al:4;      /* Successive approximation bit position low or point transform */
-    
     JIF_SCAN_COMPONENT * comps;
 } JIF_SCAN;
 
@@ -153,6 +150,9 @@ typedef struct jif_scanner {
     jif_offset size;
     jif_offset b;   /* (in bits) scanner bit cursor */
     jif_offset m;   /* last marker */
+    uint8_t    bit_cnt;     /* jhuff:: nextbit() helper */
+    byte       bit_B;       /* jhuff:: nextbit() helper */
+    byte       bit_nextbit; /* jhuff:: nextbit() helper */
 } JIF_SCANNER;
 
 JIF_SCANNER * jif_new_scanner(byte * jif_array, jif_offset array_size);
@@ -167,6 +167,8 @@ JIF_MARKER jif_prob_next_marker(JIF_SCANNER * s);   /* return marker or 0x00 */
 JIF_MARKER jif_current_marker(JIF_SCANNER * s);
 bool jif_scan_next_maker_of(JIF_MARKER e_marker, JIF_SCANNER * s );
 
+byte jif_current_byte(JIF_SCANNER * s);
+byte jif_next_byte(JIF_SCANNER * s);
 byte jif_scan_next_byte(JIF_SCANNER * s);
 uint16_t jif_scan_2_bytes(JIF_SCANNER * s);
 uint32_t jif_scan_4_bytes(JIF_SCANNER * s);
@@ -174,6 +176,4 @@ uint32_t jif_scan_4_bytes(JIF_SCANNER * s);
 uint16_t jif_scan_t_bits(JIF_SCANNER * s, jif_offset t);    /* haff code is less than 16 bits */
 uint16_t jif_scan_next_bit(JIF_SCANNER * s);
 
-
 #endif /* jif_h */
-

@@ -32,6 +32,12 @@ typedef struct _jif_huff {
 
 typedef struct _jtbl_huff JTBL_HUFF;
 
+typedef enum {
+    JHUFF_ERR_NONE = 0,
+    JHUFF_ERR_DNL = -1,
+    JHUFF_ERR_UNKNOWN = -2
+} JHUFF_ERR;
+
 /* basic */
 JIF_HUFF * jif_huff_new(void);
 void jif_huff_set_val(JIF_HUFF * fh, huff_index i, huff_val v);
@@ -42,9 +48,9 @@ JTBL_HUFF * jhuff_new(void);
 JTBL_HUFF * jtbl_huff_from_jif(JIF_HUFF * fh);
 
 /* decode */
-huff_size jhuff_decode(JTBL_HUFF * th, JIF_SCANNER * s);
-huff_val jhuff_receive(huff_size t, JIF_SCANNER * s); /* places the next T bits of the serial bit string into the low order bits of DIFF */
-huff_val jhuff_extend(huff_val v, huff_size t); /* converts the partially decoded DIFF value of precision T to the full precision difference */
+JHUFF_ERR jhuff_decode(JTBL_HUFF * th, JIF_SCANNER * s, huff_size * t);
+JHUFF_ERR jhuff_receive(huff_size t, JIF_SCANNER * s, huff_val * v); /* places the next T bits of the serial bit string into the low order bits of DIFF */
+huff_val jhuff_extend(huff_val src, huff_size t); /* converts the partially decoded DIFF value of precision T to the full precision difference */
 
 /* cleanup */
 void jhuff_free(JTBL_HUFF *);

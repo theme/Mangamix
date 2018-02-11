@@ -345,8 +345,6 @@ size_t j_info_get_bmp_data_size(pinfo dinfo){
     return dinfo->bmp->data_size;
 }
 
-
-
 bool dec_read_scan_header(pinfo dinfo, JIF_SCANNER * s){
     JIF_MARKER m = jif_current_marker(s);
     switch (m) {
@@ -392,6 +390,23 @@ bool dec_read_scan_header(pinfo dinfo, JIF_SCANNER * s){
     return false;
 }
 
+bool dec_read_DNL(pinfo dinfo, JIF_SCANNER *s ){
+    uint16_t Ld = jif_scan_2_bytes(s);
+    uint16_t offset = 2;
+    if ( 4 != Ld ){
+        err("error DNL\n");
+        return false;
+    }
+    uint8_t NL = jif_scan_2_bytes(s); offset+=2;   /* number of image component in scan */
+    if( 0 == dinfo->frame.Y ){
+        dinfo->frame.Y = NL;
+    } else {
+        err("err: redefine max number of lines in image.\n");
+        return false;
+    }
+    return true;
+}
+
 // Data unit :
 //      A. 8x8 sample matrix ( DCT based process )
 //      B. 1 sample ( lossless process )
@@ -399,7 +414,7 @@ unsigned int data_block_width(pinfo dinfo){
     return dinfo->is_dct_based ? 8: 1;
 }
 
-void dec_decode_data_unit(pinfo dinfo, JIF_SCANNER * s,
+bool dec_decode_data_unit(pinfo dinfo, JIF_SCANNER * s,
                           unsigned int sj, unsigned int du_x   , unsigned int du_y ){
     
     if ( dinfo->is_dct_based ){
@@ -407,10 +422,28 @@ void dec_decode_data_unit(pinfo dinfo, JIF_SCANNER * s,
         
         /* decode DC coeff, using DC table specified in scan header. */
         JIF_SCAN_COMPONENT * sp = &dinfo->scan.comps[sj];
-        huff_size T = jhuff_decode(dinfo->tH[sp->Td], s);
-        coeff_t DIFF = jhuff_receive(T, s);
-        DIFF = jhuff_extend(DIFF, T);
-        ZZ[0] = sp->PRED + DIFF;
+        huff_size t;
+        
+        JHUFF_ERR e = jhuff_decode(dinfo->tH[sp->Td], s, &t);
+        if ( JHUFF_ERR_DNL == e){
+            dec_read_DNL(dinfo, s);
+            return false;
+        } else if ( JHUFF_ERR_UNKNOWN == e ) {
+            return false;
+        }
+        
+        coeff_t diff;
+        e = jhuff_receive(t, s, (huff_val*)&diff);
+        
+        if ( JHUFF_ERR_DNL == e){
+            dec_read_DNL(dinfo, s);
+            return false;
+        } else if ( JHUFF_ERR_UNKNOWN == e ) {
+            return false;
+        }
+        
+        diff = jhuff_extend(diff, t);
+        ZZ[0] = sp->PRED + diff;
         
         /* decode AC coeff, using AC table specified in scan header. */
         for (unsigned int K = 1; K != 63; K++){
@@ -418,7 +451,14 @@ void dec_decode_data_unit(pinfo dinfo, JIF_SCANNER * s,
                 ZZ[i] = 0;
             }
             
-            huff_size RS = jhuff_decode(dinfo->tH[sp->Ta], s);
+            huff_size RS;
+            e = jhuff_decode(dinfo->tH[sp->Td], s, &RS);
+            if ( JHUFF_ERR_DNL == e){
+                dec_read_DNL(dinfo, s);
+                return false;
+            } else if ( JHUFF_ERR_UNKNOWN == e ) {
+                return false;
+            };
             coeff_t SSSS = RS % 16;
             coeff_t RRRR = RS >> 4;
             coeff_t R = RRRR;
@@ -432,7 +472,14 @@ void dec_decode_data_unit(pinfo dinfo, JIF_SCANNER * s,
                 }
             } else {
                 K += R;
-                ZZ[K] = jhuff_receive(SSSS, s);
+                e = jhuff_receive(SSSS, s, (huff_val*)&ZZ[K]);
+                
+                if ( JHUFF_ERR_DNL == e){
+                    dec_read_DNL(dinfo, s);
+                    return false;
+                } else if ( JHUFF_ERR_UNKNOWN == e ) {
+                    return false;
+                }
                 ZZ[K] = jhuff_extend(ZZ[K], SSSS);
             }
         }
@@ -462,6 +509,8 @@ void dec_decode_data_unit(pinfo dinfo, JIF_SCANNER * s,
             }
         }
     }
+    
+    return true;
 }
 
 bool dec_decode_MCU(pinfo dinfo, JIF_SCANNER * s){
@@ -473,34 +522,18 @@ bool dec_decode_MCU(pinfo dinfo, JIF_SCANNER * s){
         int du_x, du_y, du_n;
         for (int h = 0; h < cp->H; h++){
             for (int v = 0; v < cp->V; v++){
-                du_n = dinfo->m * cp->H + h;
+                du_n = dinfo->m * data_block_width(dinfo) * cp->H + h;
                 du_x = du_n % dinfo->frame.X;    /* data unit x */
                 du_y = du_n / dinfo->frame.X;
-                dec_decode_data_unit(dinfo, s, j, du_x, du_y);
+                if(!dec_decode_data_unit(dinfo, s, j, du_x, du_y)){
+                    return false;
+                }
             }
         }
     }
     
     return true;
 }
-
-bool dec_read_DNL(pinfo dinfo, JIF_SCANNER *s ){
-    uint16_t Ld = jif_scan_2_bytes(s);
-    uint16_t offset = 2;
-    if ( 4 != Ld ){
-        err("error DNL\n");
-        return false;
-    }
-    uint8_t NL = jif_scan_2_bytes(s); offset+=2;   /* number of image component in scan */
-    if( 0 == dinfo->frame.Y ){
-        dinfo->frame.Y = NL;
-    } else {
-        err("err: redefine max number of lines in image.\n");
-        return false;
-    }
-    return true;
-}
-
 
 void dec_decode_ECS(pinfo dinfo, JIF_SCANNER * s){
     while(dec_decode_MCU(dinfo, s)){
@@ -534,6 +567,8 @@ bool dec_decode_scan(pinfo dinfo, JIF_SCANNER * s){
         return false;
     }
     
+    s->bit_cnt = 0;
+    
     for(int j = 0; j < dinfo->scan.Ns; j++){
         dinfo->scan.comps[j].PRED = 0;
     }
@@ -550,6 +585,21 @@ bool dec_decode_scan(pinfo dinfo, JIF_SCANNER * s){
         int last = dinfo->frame.X * dinfo->frame.Y / data_block_width(dinfo) / dinfo->Ri;
         for ( int i =0; i < last - 1; i++){
             dec_decode_restart_interval(dinfo, s);
+            
+            /* expected RST marker */
+            JIF_MARKER m = jif_scan_next_marker(s);
+            if( M_RST0 <= m && m <= M_RST7){
+                s->bit_cnt = 0;
+            } else {
+                err("error reading RST_n.");
+                m = jif_scan_next_marker(s);
+                
+                if( M_RST0 <= m && m <= M_RST7){    /* optional error handling */
+                    continue;
+                } else {
+                    return  false;
+                }
+            }
         }
     }
     

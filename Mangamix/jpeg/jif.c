@@ -42,7 +42,7 @@ bool jif_scan_next_marker(JIF_SCANNER * s){
     
     for(; s->b < (s->size - 8); s->b += 8 ) {
         if( (p[s->b / 8] == 0xFF) && jif_is_marker_byte(p[(s->b / 8 )+1]) ) {   /* find a marker */
-            s->b += 8;
+            s->b += 8;  /* point to marker content */
             s->m = s->b / 8;
             return true;
         }
@@ -75,6 +75,15 @@ bool jif_scan_next_maker_of(JIF_MARKER m, JIF_SCANNER * s ){
     return false;
 }
 
+
+byte jif_current_byte(JIF_SCANNER * s){
+    return s->pjif[s->b / 8];
+}
+
+byte jif_next_byte(JIF_SCANNER * s){
+    return s->pjif[(s->b +8) / 8];
+}
+
 byte jif_scan_next_byte(JIF_SCANNER * s){
     s->b += 8;
     return s->pjif[s->b / 8];
@@ -87,6 +96,10 @@ uint16_t jif_scan_2_bytes(JIF_SCANNER * s){
 uint32_t jif_scan_4_bytes(JIF_SCANNER * s){
     return  (jif_scan_next_byte(s) << 24) + ( jif_scan_next_byte(s) << 16 )
     + ( jif_scan_next_byte(s) << 8 ) + ( jif_scan_next_byte(s) );
+}
+
+uint8_t jif_bit_in_byte(JIF_SCANNER * s){
+    return s->b % 8;
 }
 
 uint16_t jif_scan_t_bits(JIF_SCANNER * s, jif_offset t){

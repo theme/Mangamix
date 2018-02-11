@@ -71,7 +71,7 @@
  *      > j_info_get_component_depth(int c, dinfo)  => int c_depth
  *  4. j_dec_decode(dinfo) => true | false
  *      > j_info_get_error(dinfo)   => J_ERR ERR_XXXX
- *  5. j_dec_get_image(dinfo) => JSAMPLE[][] image_data
+ *  5. j_dec_get_RGB_image(dinfo) => uint8_t * image_data
  *  6. j_dec_destroy(dinfo)
  */
 
