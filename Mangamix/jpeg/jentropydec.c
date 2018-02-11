@@ -6,7 +6,7 @@
 //  Copyright © 2018 theme. All rights reserved.
 //
 
-#include "jentropydec.h"
+#include "jpegdec.h"
 
 
 /* Huffman table generated from JIF file */
@@ -145,7 +145,7 @@ JTBL_HUFF * jtbl_huff_from_jif(JIF_HUFF * fh){
 }
 
 
-JHUFF_ERR nextbit(JIF_SCANNER * s){
+JERR nextbit(JIF_SCANNER * s){
     byte bit, b2;
     if ( 0 == s->bit_cnt){
         s->bit_B = jif_scan_next_byte(s);
@@ -154,9 +154,9 @@ JHUFF_ERR nextbit(JIF_SCANNER * s){
             b2 = jif_scan_next_byte(s);
             if ( 0x00 != b2 ){
                 if ( M_DNL == b2 ){
-                    return JHUFF_ERR_DNL;
+                    return JERR_HUFF_NEXTBIT_DNL;
                 } else {
-                    return JHUFF_ERR_UNKNOWN;
+                    return JERR_UNKNOWN;
                 }
             }
         }
@@ -165,16 +165,16 @@ JHUFF_ERR nextbit(JIF_SCANNER * s){
     bit = s->bit_B >> 7;
     s->bit_cnt--;
     s->bit_B <<= 1;
-    return JHUFF_ERR_NONE;
+    return JERR_NONE;
 }
 
-JHUFF_ERR jhuff_decode(JTBL_HUFF * th, JIF_SCANNER * s, huff_size *t){
+JERR jhuff_decode(JTBL_HUFF * th, JIF_SCANNER * s, huff_size *t){
     
     int i = 1;
     
-    JHUFF_ERR e = nextbit(s);
+    JERR e = nextbit(s);
     
-    if ( JHUFF_ERR_NONE != e ){
+    if ( JERR_NONE != e ){
         return e;
     }
     
@@ -185,7 +185,7 @@ JHUFF_ERR jhuff_decode(JTBL_HUFF * th, JIF_SCANNER * s, huff_size *t){
         
         e = nextbit(s);
         
-        if ( JHUFF_ERR_NONE != e ){
+        if ( JERR_NONE != e ){
             return e;
         }
         
@@ -197,13 +197,13 @@ JHUFF_ERR jhuff_decode(JTBL_HUFF * th, JIF_SCANNER * s, huff_size *t){
     j = j + c - th->mincode[i];
     *t = th->v[j].value;
     
-    return  JHUFF_ERR_NONE;
+    return  JERR_NONE;
 }
 
 
-JHUFF_ERR jhuff_receive(huff_size t, JIF_SCANNER * s, huff_val * v){
+JERR jhuff_receive(huff_size t, JIF_SCANNER * s, huff_val * v){
     if ( 0 == t){
-        return JHUFF_ERR_UNKNOWN;
+        return JERR_UNKNOWN;
     }
     
     /* jif scan should based on byte,
@@ -211,9 +211,9 @@ JHUFF_ERR jhuff_receive(huff_size t, JIF_SCANNER * s, huff_val * v){
      */
     
     *v = 0x00;
-    JHUFF_ERR e = JHUFF_ERR_NONE;
+    JERR e = JERR_NONE;
     for ( int i = 0; i < t; i ++ ){
-        if ( JHUFF_ERR_NONE != (e = nextbit(s))) {
+        if ( JERR_NONE != (e = nextbit(s))) {
             break;
         }
         

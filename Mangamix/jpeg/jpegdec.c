@@ -375,7 +375,7 @@ bool dec_read_scan_header(pinfo dinfo, JIF_SCANNER * s){
             
             if( Ns > 1 ) {
                 if( dinfo->Mi > 10){
-                    err("sample_per_MCU=sum_j_( H * V ) should < 10");
+                    err("sample_per_MCU=sum_j_( H * V ) should < 10\n");
                     return false;
                 }
             } else if ( 1 == Ns ){
@@ -394,14 +394,14 @@ bool dec_read_DNL(pinfo dinfo, JIF_SCANNER *s ){
     uint16_t Ld = jif_scan_2_bytes(s);
     uint16_t offset = 2;
     if ( 4 != Ld ){
-        err("error DNL\n");
+        err("error reading DNL\n");
         return false;
     }
     uint8_t NL = jif_scan_2_bytes(s); offset+=2;   /* number of image component in scan */
     if( 0 == dinfo->frame.Y ){
         dinfo->frame.Y = NL;
     } else {
-        err("err: redefine max number of lines in image.\n");
+        err("err: DNL: redefine max number of lines in image.\n");
         return false;
     }
     return true;
@@ -414,7 +414,7 @@ unsigned int data_block_width(pinfo dinfo){
     return dinfo->is_dct_based ? 8: 1;
 }
 
-bool dec_decode_data_unit(pinfo dinfo, JIF_SCANNER * s,
+JERR dec_decode_data_unit(pinfo dinfo, JIF_SCANNER * s,
                           unsigned int sj, unsigned int du_x   , unsigned int du_y ){
     
     if ( dinfo->is_dct_based ){
@@ -424,22 +424,15 @@ bool dec_decode_data_unit(pinfo dinfo, JIF_SCANNER * s,
         JIF_SCAN_COMPONENT * sp = &dinfo->scan.comps[sj];
         huff_size t;
         
-        JHUFF_ERR e = jhuff_decode(dinfo->tH[sp->Td], s, &t);
-        if ( JHUFF_ERR_DNL == e){
-            dec_read_DNL(dinfo, s);
-            return false;
-        } else if ( JHUFF_ERR_UNKNOWN == e ) {
-            return false;
+        JERR e = jhuff_decode(dinfo->tH[sp->Td], s, &t);
+        if ( JERR_NONE != e){
+            return e;
         }
         
         coeff_t diff;
         e = jhuff_receive(t, s, (huff_val*)&diff);
-        
-        if ( JHUFF_ERR_DNL == e){
-            dec_read_DNL(dinfo, s);
-            return false;
-        } else if ( JHUFF_ERR_UNKNOWN == e ) {
-            return false;
+        if ( JERR_NONE != e){
+            return e;
         }
         
         diff = jhuff_extend(diff, t);
@@ -453,12 +446,9 @@ bool dec_decode_data_unit(pinfo dinfo, JIF_SCANNER * s,
             
             huff_size RS;
             e = jhuff_decode(dinfo->tH[sp->Td], s, &RS);
-            if ( JHUFF_ERR_DNL == e){
-                dec_read_DNL(dinfo, s);
-                return false;
-            } else if ( JHUFF_ERR_UNKNOWN == e ) {
-                return false;
-            };
+            if ( JERR_NONE != e){
+                return e;
+            }
             coeff_t SSSS = RS % 16;
             coeff_t RRRR = RS >> 4;
             coeff_t R = RRRR;
@@ -473,12 +463,8 @@ bool dec_decode_data_unit(pinfo dinfo, JIF_SCANNER * s,
             } else {
                 K += R;
                 e = jhuff_receive(SSSS, s, (huff_val*)&ZZ[K]);
-                
-                if ( JHUFF_ERR_DNL == e){
-                    dec_read_DNL(dinfo, s);
-                    return false;
-                } else if ( JHUFF_ERR_UNKNOWN == e ) {
-                    return false;
+                if ( JERR_NONE != e){
+                    return e;
                 }
                 ZZ[K] = jhuff_extend(ZZ[K], SSSS);
             }
@@ -510,11 +496,11 @@ bool dec_decode_data_unit(pinfo dinfo, JIF_SCANNER * s,
         }
     }
     
-    return true;
+    return JERR_NONE;
 }
 
-bool dec_decode_MCU(pinfo dinfo, JIF_SCANNER * s){
-    
+JERR dec_decode_MCU(pinfo dinfo, JIF_SCANNER * s){
+    JERR e;
     for ( int j = 0; j < dinfo->scan.Ns; j++){
         JIF_SCAN_COMPONENT sp = dinfo->scan.comps[j];
         JIF_FRAME_COMPONENT * cp = frame_comp(dinfo, sp.Cs);
@@ -525,23 +511,30 @@ bool dec_decode_MCU(pinfo dinfo, JIF_SCANNER * s){
                 du_n = dinfo->m * data_block_width(dinfo) * cp->H + h;
                 du_x = du_n % dinfo->frame.X;    /* data unit x */
                 du_y = du_n / dinfo->frame.X;
-                if(!dec_decode_data_unit(dinfo, s, j, du_x, du_y)){
-                    return false;
+                e = dec_decode_data_unit(dinfo, s, j, du_x, du_y);
+                if (JERR_NONE != e){
+                    return e;
                 }
             }
         }
     }
     
-    return true;
+    return JERR_NONE;
 }
 
-void dec_decode_ECS(pinfo dinfo, JIF_SCANNER * s){
-    while(dec_decode_MCU(dinfo, s)){
+JERR dec_decode_ECS(pinfo dinfo, JIF_SCANNER * s){
+    JERR e;
+    while(true){
+        e = dec_decode_MCU(dinfo, s);
+        if (JERR_NONE != e){
+            return e;
+        }
         ++dinfo->m;
     }
 }
 
-bool dec_decode_restart_interval(pinfo dinfo, JIF_SCANNER * s){
+JERR dec_decode_restart_interval(pinfo dinfo, JIF_SCANNER * s){
+    JERR e;
     /* reset on restart */
     if(dinfo->is_dct_based){
         for(int j = 0; j < dinfo->scan.Ns; j++){
@@ -550,18 +543,18 @@ bool dec_decode_restart_interval(pinfo dinfo, JIF_SCANNER * s){
     }
     
     for(int i=0; i < dinfo->Ri; i++ ){
-        if (dec_decode_MCU(dinfo, s)){
-            ++dinfo->m;
-        } else {
-            return false;
+        e = dec_decode_MCU(dinfo, s);
+        if (JERR_NONE != e){
+            return e;
         }
+        ++dinfo->m;
     }
     
-    return true;
+    return JERR_NONE;
 }
 
 /* note : a scan may enable restart interval Ri */
-bool dec_decode_scan(pinfo dinfo, JIF_SCANNER * s){
+JERR dec_decode_scan(pinfo dinfo, JIF_SCANNER * s){
     
     if(!dec_read_scan_header(dinfo, s)){
         return false;
@@ -575,6 +568,7 @@ bool dec_decode_scan(pinfo dinfo, JIF_SCANNER * s){
     
     dinfo->m = 0;
     
+    JERR e;
     
     if ( dinfo->Ri > 0 ){   /* restart interval is enabled */
         // How many intervals are there in this scan ?
@@ -584,41 +578,55 @@ bool dec_decode_scan(pinfo dinfo, JIF_SCANNER * s){
          */
         int last = dinfo->frame.X * dinfo->frame.Y / data_block_width(dinfo) / dinfo->Ri;
         for ( int i =0; i < last - 1; i++){
-            dec_decode_restart_interval(dinfo, s);
+            e = dec_decode_restart_interval(dinfo, s);
+            
+            if (JERR_NONE != e){
+                return e;
+            }
             
             /* expected RST marker */
             JIF_MARKER m = jif_scan_next_marker(s);
             if( M_RST0 <= m && m <= M_RST7){
                 s->bit_cnt = 0;
             } else {
-                err("error reading RST_n.");
-                m = jif_scan_next_marker(s);
-                
-                if( M_RST0 <= m && m <= M_RST7){    /* optional error handling */
-                    continue;
-                } else {
-                    return  false;
-                }
+                return JERR_SCAN_MISS_RST;
             }
         }
     }
     
-    dec_decode_ECS(dinfo, s);
+    e = dec_decode_ECS(dinfo, s);
     
-    return dinfo->m > 0;
+    return e;
 }
 
 /* decode multiple scan of a SOF */
 unsigned int dec_decode_multi_scan(pinfo dinfo, JIF_SCANNER * s){
     unsigned int scan_count = 0;
-    
+    JERR e;
     while(dec_read_tables_misc(dinfo, s) && M_SOS == jif_current_marker(s)) {
         dec_update_img_after_sof(dinfo);
         
-        if(!dec_decode_scan(dinfo, s)){
-            break;
-        } else {
+        e = dec_decode_scan(dinfo, s);
+        
+        if (JERR_NONE == e){
             ++scan_count;
+        } else if ( JERR_HUFF_NEXTBIT_DNL == e ){
+            
+            /* DNL is expected only after 1st scan, while frame.Y is not defined in frame header. */
+            if( 0 == dinfo->frame.Y ){
+                if(M_DNL == jif_current_marker(s)){
+                    printf("%x @%llu DNL\n", M_DNL, jif_get_offset(s));
+                    if(!dec_read_DNL(dinfo, s)){
+                        return scan_count;
+                    }
+                } else {
+                    err("error: lack of DNL (frame.Y == 0).");
+                    return scan_count;
+                }
+            }
+            continue;   /* terminate current scan */
+        } else if ( JERR_SCAN_MISS_RST == e) {
+            continue;
         }
         
         /* EOI or more scan (after 1st scan) */
@@ -626,19 +634,6 @@ unsigned int dec_decode_multi_scan(pinfo dinfo, JIF_SCANNER * s){
             break;
         }
         
-        /* DNL is expected only after 1st scan, while frame.Y is not defined in frame header. */
-        if( 0 == dinfo->frame.Y ){
-            if(M_DNL == jif_current_marker(s)){
-                printf("%x @%llu DNL\n", M_DNL, jif_get_offset(s));
-                if(!dec_read_DNL(dinfo, s)){
-                    err("error reading DNL");
-                    return scan_count;
-                }
-            } else {
-                err("error: lack of DNL (frame.Y == 0).");
-                return scan_count;
-            }
-        }
     }
     
     return scan_count;
@@ -708,7 +703,7 @@ cleanup:
     return success;
 }
 
-J_ERR j_info_get_error(pinfo dinfo){
+JERR j_info_get_error(pinfo dinfo){
     return dinfo->err;
 }
 
