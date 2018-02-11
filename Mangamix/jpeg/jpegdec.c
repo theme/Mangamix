@@ -243,18 +243,18 @@ void dec_update_img_after_sof (pinfo dinfo){
 
 void dec_update_bmp_after_sof (pinfo dinfo){
     
-    JIMG_BITMAP b = *dinfo->bmp;
+    JIMG_BITMAP * b = dinfo->bmp;
     
-    if ( b.width < dinfo->frame.X )
-        b.width = dinfo->frame.X;
+    if ( b->width < dinfo->frame.X )
+        b->width = dinfo->frame.X;
     
-    if ( b.height < dinfo->frame.Y )
-        b.height = dinfo->frame.Y;
+    if ( b->height < dinfo->frame.Y )
+        b->height = dinfo->frame.Y;
     
     dec_update_img_after_sof(dinfo);
     
-    b.bits_per_component = dinfo->frame.P;
-    b.bits_per_pixel = dinfo->frame.P * dinfo->img->num_of_components;
+    b->bits_per_component = dinfo->frame.P;
+    b->bits_per_pixel = dinfo->frame.P * dinfo->img->num_of_components;
     
 }
 
@@ -275,7 +275,7 @@ bool dec_prob_read_a_sof_param(pinfo dinfo, JIF_SCANNER * s){
 }
 
 /* scan jif file to get image size, color. */
-bool j_dec_read_header(pinfo dinfo){
+bool j_dec_read_jpeg_header(pinfo dinfo){
     if( 0 == dinfo->src ) {
         return false;
     }
@@ -308,11 +308,12 @@ bool j_dec_read_header(pinfo dinfo){
         /* read SOF  */
         if (dec_prob_read_a_sof_param(dinfo, s_soi)){   /* prob_read won't affect s_soi */
             success = true;
+            
+            /* to get image size */
+            dec_update_bmp_after_sof(dinfo);
+            
             break;
         }
-        
-        /* to get image size */
-        dec_update_bmp_after_sof(dinfo);
     }
     
     jif_del_scanner(s_soi);
