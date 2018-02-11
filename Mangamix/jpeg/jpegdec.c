@@ -333,8 +333,7 @@ bool dec_read_scan_header(pinfo dinfo, JIF_SCANNER * s){
         case M_SOS:
             printf("%x @%llu SOS\n", m, jif_get_offset(s));
         {   /* scan header */
-//            uint16_t Ls = jif_scan_2_bytes(s);
-            jif_scan_2_bytes(s);
+            uint16_t Ls = jif_scan_2_bytes(s);
             uint16_t offset = 2;
             
             uint8_t Ns = jif_scan_next_byte(s); offset++;   /* number of image component in scan */
@@ -342,7 +341,7 @@ bool dec_read_scan_header(pinfo dinfo, JIF_SCANNER * s){
             dinfo->scan.comps = realloc(dinfo->scan.comps,
                                         Ns * sizeof(JIF_SCAN_COMPONENT));
             byte b;
-            dinfo->Mi = 0;
+            int Mi = 0;
             int Cs;
             for(int j=0; j < Ns; j++){
                 Cs =jif_scan_next_byte(s); offset++;   /* Scan component selector */
@@ -352,18 +351,22 @@ bool dec_read_scan_header(pinfo dinfo, JIF_SCANNER * s){
                 dinfo->scan.comps[j].Ta = ( 0x0f & b );  /* Specifies one of four possible AC entropy coding table */
                 
                 JIF_FRAME_COMPONENT * c = frame_comp(dinfo, Cs);
-                dinfo->Mi += c->H * c->V;
+                Mi += c->H * c->V;
             }
             
-            if( Ns > 1 ) {
-                if( dinfo->Mi > 10){
-                    err("sample_per_MCU=sum_j_( H * V ) should < 10\n");
-                    return false;
+            if( Ns > 1 && Mi > 10) {
+                err("sample_per_MCU=sum_j_( H * V ) should < 10\n");
+                while(offset < Ls){
+                    jif_scan_next_byte(s); offset++;
                 }
-            } else if ( 1 == Ns ){
-                dinfo->Mi = 1;
+                return false;
             }
             
+            dinfo->scan.Ss = jif_scan_next_byte(s); offset++;
+            dinfo->scan.Se = jif_scan_next_byte(s); offset++;
+            b = jif_scan_next_byte(s); offset++;
+            dinfo->scan.Ah = ( b >> 4 );
+            dinfo->scan.Al = ( 0x0f & b );
         }
             return true;
         default:
@@ -675,6 +678,7 @@ unsigned int dec_decode_multiple_image(pinfo dinfo, JIF_SCANNER * s){
                 break;
         }
     }
+    printf(">> dec_decode_multiple_image() %u\n", img_counter);
     return img_counter;
 }
 

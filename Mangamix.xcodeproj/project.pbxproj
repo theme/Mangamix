@@ -63,7 +63,6 @@
 		A591AEB1202D83AD009AC950 /* jquantdec.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = jquantdec.c; sourceTree = "<group>"; };
 		A591AEB4202E76C8009AC950 /* jdct.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = jdct.h; sourceTree = "<group>"; };
 		A591AEB5202E76C8009AC950 /* jdct.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = jdct.c; sourceTree = "<group>"; };
-		A59B441120304336006B3A2E /* jerr.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = jerr.h; sourceTree = "<group>"; };
 		A59E93471FEE5778004A9F48 /* JifDecoder.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = JifDecoder.h; sourceTree = "<group>"; };
 		A59E93481FEE5778004A9F48 /* JifDecoder.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = JifDecoder.m; sourceTree = "<group>"; };
 		A59E934D1FF3ED2F004A9F48 /* ImageIO.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = ImageIO.framework; path = System/Library/Frameworks/ImageIO.framework; sourceTree = SDKROOT; };
@@ -119,7 +118,6 @@
 			isa = PBXGroup;
 			children = (
 				A51603FF201BA9D700DCD761 /* jtypes.h */,
-				A59B441120304336006B3A2E /* jerr.h */,
 				A591AEB4202E76C8009AC950 /* jdct.h */,
 				A591AEB5202E76C8009AC950 /* jdct.c */,
 				A557EABD2004065C00893FDC /* jif.h */,

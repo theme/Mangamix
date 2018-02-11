@@ -54,10 +54,14 @@
     
     // decode
     CGImageRef cgi = [[self jifDecoder] decodeJifData:fileData];
-    NSSize s;
-    s.height = CGImageGetHeight(cgi);
-    s.width = CGImageGetWidth(cgi);
-    return [[NSImage alloc] initWithCGImage:cgi size:s];
+    if( cgi ) {
+        NSSize s;
+        s.height = CGImageGetHeight(cgi);
+        s.width = CGImageGetWidth(cgi);
+        return [[NSImage alloc] initWithCGImage:cgi size:s];
+    } else {
+        return NULL;
+    }
 }
 
 - (void)viewDidLoad {
