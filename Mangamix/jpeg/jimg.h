@@ -25,8 +25,8 @@
 typedef uint16_t    JIMG_SAMPLE;        /* enough to save 8 or 12 bit precision integer */
 
 typedef struct {
-    uint16_t    H;      /* sampling factor */
-    uint16_t    V;      /* sampling factor */
+    uint16_t    X;
+    uint16_t    Y;
     unsigned int  sample_precision;          /* DCT: 8,12; those lossless: 2 ~ 16 */
     JIMG_SAMPLE    *   data;                  /* the decoded image data */
 } JIMG_COMPONENT;
@@ -56,14 +56,22 @@ typedef struct {
     uint8_t     bits_per_component;
     byte        *data;
     size_t      data_size;
-} JIMG_BITMAP;
+} JBMP;
 
+/* construct */
 JIMG * jimg_new(void);
 JIMG * jimg_set_components(JIMG * img, uint8_t index, uint16_t X, uint16_t Y, unsigned int precision);
 JIMG * jimg_write_sample(JIMG * img, uint8_t index, uint16_t x, uint16_t y, double s);
+
+
+/* free */
 void jimg_free(JIMG * img);
 
-JIMG_BITMAP * jbmp_new(void);
-void jbmp_free(JIMG_BITMAP * bmp);
+/* generate bmp */
+JBMP * jbmp_new(void);
+JBMP * jbmp_make_RGB24(JIMG * img, JBMP * bmp);
+
+void jbmp_release(void *info, const void *data, size_t size);
+void jbmp_free(JBMP * bmp);
 
 #endif /* jimg_h */

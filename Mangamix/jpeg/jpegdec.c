@@ -233,17 +233,30 @@ bool dec_read_sof(pinfo dinfo, JIF_SCANNER * s){
 
 void dec_update_img_after_sof (pinfo dinfo){
     JIF_FRAME_COMPONENT * p;
+    byte Hmax = 1, Vmax = 1;
+    for(int i = 0; i < dinfo->frame.Nf; i++){
+        p = &(dinfo->frame.comps[i]);
+        if (Hmax < p->H){
+            Hmax = p->H;
+        }
+        if (Vmax < p->V){
+            Vmax = p->V;
+        }
+    }
+    
     for(int i = 0; i < dinfo->frame.Nf; i++){
         p = &dinfo->frame.comps[i];
-        jimg_set_components(dinfo->img, p->C, p->H, p->V, dinfo->frame.P);
+        jimg_set_components(dinfo->img,
+                            p->C,
+                            dinfo->frame.X * p->H / Hmax,
+                            dinfo->frame.Y * p->V / Vmax,
+                            dinfo->frame.P);
     }
-    dinfo->img->X = dinfo->frame.X;
-    dinfo->img->Y = dinfo->frame.Y;
 }
 
 void dec_update_bmp_after_sof (pinfo dinfo){
     
-    JIMG_BITMAP * b = dinfo->bmp;
+    JBMP * b = dinfo->bmp;
     
     if ( b->width < dinfo->frame.X )
         b->width = dinfo->frame.X;
@@ -310,7 +323,7 @@ bool j_dec_read_jpeg_header(pinfo dinfo){
             success = true;
             
             /* to get image size */
-            dec_update_bmp_after_sof(dinfo);
+            dec_update_img_after_sof(dinfo);
             
             break;
         }
@@ -320,31 +333,13 @@ bool j_dec_read_jpeg_header(pinfo dinfo){
     return success;
 }
 
-unsigned long j_info_get_width(pinfo dinfo){
+unsigned long j_info_img_width(pinfo dinfo){
     return dinfo->img->X;
 };
 
-unsigned long j_info_get_height(pinfo dinfo){
+unsigned long j_info_img_height(pinfo dinfo){
     return dinfo->img->Y;
 };
-
-JIMG_COLOR_SPACE j_info_get_colorspace(pinfo dinfo){
-    return dinfo->bmp->color_space;
-}
-
-int j_info_get_num_of_components(pinfo dinfo){
-    return dinfo->img->num_of_components;
-}
-int j_info_get_component_depth(int comp_i, pinfo dinfo){
-    return dinfo->bmp->bits_per_component;    /* TODO : "a decoder with appropriate accuracy" */
-}
-
-void * j_info_get_bmp_data(pinfo dinfo){
-    return dinfo->bmp->data;
-}
-size_t j_info_get_bmp_data_size(pinfo dinfo){
-    return dinfo->bmp->data_size;
-}
 
 bool dec_read_scan_header(pinfo dinfo, JIF_SCANNER * s){
     JIF_MARKER m = jif_current_marker(s);
@@ -411,7 +406,7 @@ bool dec_read_DNL(pinfo dinfo, JIF_SCANNER *s ){
 // Data unit :
 //      A. 8x8 sample matrix ( DCT based process )
 //      B. 1 sample ( lossless process )
-unsigned int data_block_width(pinfo dinfo){
+unsigned int data_unit_width(pinfo dinfo){
     return dinfo->is_dct_based ? 8: 1;
 }
 
@@ -492,7 +487,7 @@ JERR dec_decode_data_unit(pinfo dinfo, JIF_SCANNER * s,
         /* write to img */
         for (y=0; y<DCTWIDTH; y++) {
             for (x=0; x<DCTWIDTH; x++) {
-                jimg_write_sample(dinfo->img, sp->Cs, du_x + x, du_y + y, IDCT[y][x]);
+                jimg_write_sample(dinfo->img, sp->Cs, du_x + x, du_y + y, IDCT[y][x]); // TODO: ???
             }
         }
     }
@@ -500,18 +495,25 @@ JERR dec_decode_data_unit(pinfo dinfo, JIF_SCANNER * s,
     return JERR_NONE;
 }
 
+/* comp > block (H x V in MCU) > unit > sample */
+
 JERR dec_decode_MCU(pinfo dinfo, JIF_SCANNER * s){
     JERR e;
     for ( int j = 0; j < dinfo->scan.Ns; j++){
         JIF_SCAN_COMPONENT sp = dinfo->scan.comps[j];
         JIF_FRAME_COMPONENT * cp = frame_comp(dinfo, sp.Cs);
         
-        int du_x, du_y, du_n;
+        int du_x, du_y; /* data unit DC sample x, y within component */
+        int mcu_Xn = dinfo->frame.X / data_unit_width(dinfo) / cp->H ; /* number of MCU | data block in a row */
+        int mcu_x = dinfo->m % mcu_Xn;
+        int mcu_y = dinfo->m / mcu_Xn;
+        
+        /* do a data block, H x V data units */
         for (int h = 0; h < cp->H; h++){
             for (int v = 0; v < cp->V; v++){
-                du_n = dinfo->m * data_block_width(dinfo) * cp->H + h;
-                du_x = du_n % dinfo->frame.X;    /* data unit x */
-                du_y = du_n / dinfo->frame.X;
+                
+                dc_x = mcu_x * cp->H + h;    /* data unit x */
+                dc_y = mcu_y * cp->V + v;
                 e = dec_decode_data_unit(dinfo, s, j, du_x, du_y);
                 if (JERR_NONE != e){
                     return e;
@@ -577,7 +579,8 @@ JERR dec_decode_scan(pinfo dinfo, JIF_SCANNER * s){
         /* B.2.1
          If restart is enabled, the number of entropy-coded segments (MCU x n) is defined by the size of the image and the defined restart interval
          */
-        int last = dinfo->frame.X * dinfo->frame.Y / data_block_width(dinfo) / dinfo->Ri;
+        /* TODO: dinfo->frame.Y ?= 0 */
+        int last = dinfo->frame.X * dinfo->frame.Y / data_unit_width(dinfo) / dinfo->Ri;
         for ( int i =0; i < last - 1; i++){
             e = dec_decode_restart_interval(dinfo, s);
             
@@ -605,7 +608,6 @@ unsigned int dec_decode_multi_scan(pinfo dinfo, JIF_SCANNER * s){
     unsigned int scan_count = 0;
     JERR e;
     while(dec_read_tables_misc(dinfo, s) && M_SOS == jif_current_marker(s)) {
-        dec_update_img_after_sof(dinfo);
         
         e = dec_decode_scan(dinfo, s);
         
@@ -674,6 +676,8 @@ unsigned int dec_decode_multiple_image(pinfo dinfo, JIF_SCANNER * s){
                 if(!dec_read_sof(dinfo, s))     /* frame.Y may not present */
                     break;
                 
+                dec_update_img_after_sof(dinfo);
+                
                 if( 1 <= dec_decode_multi_scan(dinfo, s)){
                     img_counter ++;
                 }
@@ -706,11 +710,6 @@ cleanup:
 
 JERR j_info_get_error(pinfo dinfo){
     return dinfo->err;
-}
-
-void j_info_release_bmp_data(void *info, const void *data, size_t size){
-    pinfo dinfo = (pinfo) info;
-    jbmp_free(dinfo->bmp);
 }
 
 void j_dec_destroy(pinfo dinfo){

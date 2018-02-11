@@ -70,10 +70,10 @@
         
         j_dec_set_src_array((unsigned char*)[fileData bytes], fileSize, p);
         XCTAssert(j_dec_read_jpeg_header(p));
-        XCTAssert(32 == j_info_get_width(p));
-        NSLog(@">> baseline-standard.jpg width: %lu", j_info_get_width(p));
-        XCTAssert(30 == j_info_get_height(p));
-        NSLog(@">> baseline-standard.jpg height: %lu", j_info_get_height(p));
+        XCTAssert(32 == j_info_img_width(p));
+        NSLog(@">> baseline-standard.jpg width: %lu", j_info_img_width(p));
+        XCTAssert(30 == j_info_img_height(p));
+        NSLog(@">> baseline-standard.jpg height: %lu", j_info_img_height(p));
         
         // release
         j_dec_destroy(p);

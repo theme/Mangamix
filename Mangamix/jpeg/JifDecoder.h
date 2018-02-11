@@ -13,7 +13,6 @@
 #import <Foundation/Foundation.h>
 #import <ImageIO/ImageIO.h>
 
-
 @interface JifDecoder : NSObject
 
 - (CGImageRef) decodeJifData:(NSData*) jifData;

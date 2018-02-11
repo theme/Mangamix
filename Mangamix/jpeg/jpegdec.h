@@ -58,7 +58,7 @@
  *  resonable components of decoder is similar to the encoder.
  */
 
-/*  This file is decoder's API. (APP should only need to include this file only.)
+/*  This file is jif decoder's API. (decode jif to img components. Post convertion to bmp is in jimg.h)
  *
  *  Overview of usage:
  *  1. j_dec_new() => (struct *) dinfo
@@ -66,9 +66,7 @@
  *  3. j_dec_read_header(dinfo)
  *      > j_info_get_width(dinfo)    => int w
  *      > j_info_get_height(dinfo)   => int h
- *      > j_info_get_colorspace(dinfo) => J_COLOR_SPACE J_CS_GRAY | _RGB  | _CMYK
  *      > j_info_get_components(dinfo) => int numbrer_of_components
- *      > j_info_get_component_depth(int c, dinfo)  => int c_depth
  *  4. j_dec_decode(dinfo) => true | false
  *      > j_info_get_error(dinfo)   => J_ERR ERR_XXXX
  *  5. j_dec_get_RGB_image(dinfo) => uint8_t * image_data
@@ -154,7 +152,7 @@ typedef struct J_DEC_INFO {
     
     /* (per file) output: image data */
     JIMG                *img;
-    JIMG_BITMAP         *bmp;
+    JBMP         *bmp;
     
     /* (per decoder) coding etc. */
     bool                is_dct_based;
@@ -184,22 +182,12 @@ pinfo j_dec_new(void);
 bool j_dec_set_src_array(unsigned char *src, unsigned long long size, pinfo dinfo);
 bool j_dec_read_jpeg_header(pinfo dinfo);    /* read a frame in image */
 
-unsigned long j_info_get_width(pinfo dinfo);
-unsigned long j_info_get_height(pinfo dinfo);
-JIMG_COLOR_SPACE j_info_get_colorspace(pinfo dinfo);
-int j_info_get_num_of_components(pinfo dinfo);
-int j_info_get_component_depth(int comp_i, pinfo dinfo);    /* depth of i th component */
-
-void * j_info_get_bmp_data(pinfo dinfo);
-size_t j_info_get_bmp_data_size(pinfo dinfo);
-
-void j_info_release_bmp_data(void *info, const void *data, size_t size);
+unsigned long j_info_img_width(pinfo dinfo);
+unsigned long j_info_img_height(pinfo dinfo);
 
 bool j_dec_decode(pinfo dinfo);
+
 JERR j_info_get_error(pinfo dinfo);
 void j_dec_destroy(pinfo dinfo);
-
-
-
 
 #endif /* jpegdec_h */

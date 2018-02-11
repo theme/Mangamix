@@ -23,16 +23,16 @@ JIMG * jimg_new(void){
     return img;
 }
 
-JIMG * jimg_set_components(JIMG * img, uint8_t index, uint16_t H, uint16_t V, unsigned int precision){
+JIMG * jimg_set_components(JIMG * img, uint8_t index, uint16_t X, uint16_t Y, unsigned int precision){
     JIMG_COMPONENT * newp;
     if ( (newp = realloc(img->comps[index], sizeof(JIMG_COMPONENT)))) {
         img->comps[index] = newp;
-        newp->data = realloc(newp->data, sizeof(JIMG_SAMPLE) * img->X * img->Y);
+        newp->data = realloc(newp->data, sizeof(JIMG_SAMPLE) * X * Y);
         if(!newp->data) {
             return NULL;
         }
-        newp->H = H;
-        newp->V = V;
+        newp->X = X;
+        newp->Y = Y;
         newp->sample_precision = precision;
         if( false == img->comp_map[index] ){
             img->num_of_components ++;
@@ -54,6 +54,8 @@ JIMG * jimg_write_sample(JIMG * img, uint8_t index, uint16_t x, uint16_t y, doub
         cp->data[y * img->Y + x] = 0;
     } else if ( s > smax){
         cp->data[y * img->Y + x] = smax;
+    } else {
+        cp->data[y * img->Y + x] = s;
     }
     
     return img;
@@ -71,16 +73,77 @@ void jimg_free(JIMG * img){
     free(img);
 }
 
-JIMG_BITMAP * jbmp_new(void){
-    JIMG_BITMAP * bmp;
-    if( (bmp = malloc(sizeof(JIMG_BITMAP)))){
+JBMP * jbmp_new(void){
+    JBMP * bmp;
+    if( (bmp = malloc(sizeof(JBMP)))){
         bmp->data = malloc(0);
         bmp->data_size = 0;
     }
     return bmp;
 }
 
-void jbmp_free(JIMG_BITMAP * bmp){
+void jbmp_make_RGB24(JIMG * img, JBMP * bmp){
+    bmp->width = img->X;
+    bmp->height = img->Y;
+    bmp->bits_per_pixel = 24;
+    bmp->bits_per_component = 8;
+    bmp->data_size = 3 * img->X * img->Y;
+    bmp->data = realloc(bmp->data, bmp->data_size);
+    
+    int c = img->num_of_components;
+    JIMG_COMPONENT * comps[c];
+    
+    for ( int i = 0, n = 0; i < JMAX_COMPONENTS && n <= c; i++){
+        if(img->comp_map[i]){
+            comps[n++] = img->comps[i];
+        }
+    }
+    
+    JIMG_COMPONENT * cp;
+    if ( 1 == c ) {
+        cp = comps[0];
+        for (int j = 0 ; j < bmp->height; j++) {
+            for( int i=0; i < bmp->width; i++ ){
+                int p = j*bmp->width + i;   /* pixel index */
+                int b = p * 3;      /* byte index */
+                bmp->data[b] = cp->data[p];     /* R */
+                bmp->data[b+1] = cp->data[p];   /* G */
+                bmp->data[b+2] = cp->data[p];   /* B */
+            }
+        }
+    } else if ( 3 == c ) {
+        int maxH=1, maxV=1;
+        for (int i = 0; i < 3; i++ ){
+            cp = comps[i];
+            if ( maxH < cp->H ){
+                maxH = cp->H;
+            }
+            if ( maxV < cp->V ){
+                maxV = cp->V;
+            }
+        }
+        
+        for (int j = 0 ; j < bmp->height; j++) {
+            for( int i=0; i < bmp->width; i++ ){
+                for ( int k = 0; k < c; k++ ){
+                    cp = comps[k];
+                    int p = j * bmp->width * cp->V / maxV + i * cp->H / maxH;   /* pixel index */
+                    int b = p * 3;      /* byte index */
+                    bmp->data[b] = cp->data[p];     /* R */
+                    bmp->data[b+1] = cp->data[p];   /* G */
+                    bmp->data[b+2] = cp->data[p];   /* B */
+                }
+            }
+        }
+    }
+}
+
+void jbmp_release(void *info, const void *data, size_t size){
+    
+    jbmp_free((JBMP *)data);
+}
+
+void jbmp_free(JBMP * bmp){
     free(bmp->data);
     free(bmp);
 }

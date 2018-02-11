@@ -18,14 +18,17 @@
     CGImageRef ir = NULL;
     
     if (j_dec_decode(dinfo)){
-        size_t width = j_info_get_width(dinfo);     /* in pixel for image */
-        size_t height = j_info_get_height(dinfo);
+        size_t width = j_info_img_width(dinfo);     /* in pixel for image */
+        size_t height = j_info_img_height(dinfo);
+        
+        JBMP * bmp = jbmp_make_RGB24(dinfo->img, dinfo->bmp);
+        
         size_t bitsPerComponent = 8;
         size_t bitsPerPixel = 24;
-        size_t bytesPerRow = 150;
+        size_t bytesPerRow = bmp->width * bitsPerPixel;
         CGColorSpaceRef space = CGColorSpaceCreateDeviceRGB();
         CGBitmapInfo bitmapInfo = kCGBitmapByteOrder32Little | kCGImageAlphaNoneSkipLast;
-        CGDataProviderRef provider = CGDataProviderCreateWithData(dinfo, j_info_get_bmp_data(dinfo), j_info_get_bmp_data_size(dinfo), j_info_release_bmp_data);
+        CGDataProviderRef provider = CGDataProviderCreateWithData(dinfo, bmp->data, bmp->data_size, jbmp_release);
         const CGFloat *decode = NULL;   /* do not map color */
         bool shouldInterpolate = true;  /* Core Graphics should apply a pixel-smoothing algorithm to the image, when output device with higher resolution than data. */
         CGColorRenderingIntent intent = kCGRenderingIntentAbsoluteColorimetric;
