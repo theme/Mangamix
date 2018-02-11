@@ -164,7 +164,7 @@ bool jif_is_marker_byte(byte b);
 
 bool jif_scan_next_marker(JIF_SCANNER * );
 JIF_MARKER jif_prob_next_marker(JIF_SCANNER * s);   /* return marker or 0x00 */
-JIF_MARKER jif_get_current_marker(JIF_SCANNER * s);
+JIF_MARKER jif_current_marker(JIF_SCANNER * s);
 bool jif_scan_next_maker_of(JIF_MARKER e_marker, JIF_SCANNER * s );
 
 byte jif_scan_next_byte(JIF_SCANNER * s);

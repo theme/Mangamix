@@ -61,14 +61,14 @@ JIF_MARKER jif_prob_next_marker(JIF_SCANNER * s){
     return 0x00;
 }
 
-JIF_MARKER jif_get_current_marker(JIF_SCANNER * s){
+JIF_MARKER jif_current_marker(JIF_SCANNER * s){
     return s->pjif[s->m];
 }
 
 bool jif_scan_next_maker_of(JIF_MARKER m, JIF_SCANNER * s ){
     
     while ( jif_scan_next_marker(s) ){
-        if (m == jif_get_current_marker(s)){
+        if (m == jif_current_marker(s)){
             return true;
         }
     }
