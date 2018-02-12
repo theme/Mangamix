@@ -17,7 +17,7 @@ void jhuff_set_val(JTBL_HUFF * fh, huffindex_t k, huffval_t v){
     fh->huffval[k] = v;
 }
 
-void jhuff_gen_huffsize(JTBL_HUFF * th){
+void generate_size_table(JTBL_HUFF * th){
     uint16_t k = 0, i, j;
     
     for( i = 1; i <= HUFFCAT; i++ ){
@@ -31,7 +31,7 @@ void jhuff_gen_huffsize(JTBL_HUFF * th){
 }
 
 
-void jhuff_gen_huffcode(JTBL_HUFF * th){
+void generate_code_table(JTBL_HUFF * th){
     uint16_t k = 0, code = 0, si = th->huffsize[0];
     
     while (true) {
@@ -52,13 +52,11 @@ void jhuff_gen_huffcode(JTBL_HUFF * th){
     }
 }
 
-void jhuff_gen_size_code(JTBL_HUFF * th){
-    jhuff_gen_huffsize(th);
-    jhuff_gen_huffcode(th);
-    //    jhuff_gen_huffval(th);
-}
-
 void jhuff_gen_decode_tbls(JTBL_HUFF * th){
+    generate_size_table(th);
+    generate_code_table(th);
+    //    jhuff_gen_huffval(th);
+    
     for( int i = 1, j = 0; i <= HUFFCAT ; i++ ){
         if( 0 == th->bits[i] ){
             th->maxcode[i] = -1;
@@ -96,7 +94,7 @@ JERR nextbit(JIF_SCANNER * s){
     return JERR_NONE;
 }
 
-JERR jhuff_decode(JTBL_HUFF * th, JIF_SCANNER * s, huffsize_t *t){
+JERR jhuff_decode(JTBL_HUFF * th, JIF_SCANNER * s, huffval_t *t){
     
     int i = 1;
     
@@ -106,9 +104,9 @@ JERR jhuff_decode(JTBL_HUFF * th, JIF_SCANNER * s, huffsize_t *t){
         return e;
     }
     
-    int16_t c = s->bit_nextbit;
+    huffval_t code = s->bit_nextbit;    /* huffval_t (uint8_t) <= byte (uint8_t) */
     
-    while( c > th->maxcode[i] ){
+    while( code > th->maxcode[i] ){     /* uint8 > int16 ? */
         i++;
         
         e = nextbit(s);
@@ -116,11 +114,11 @@ JERR jhuff_decode(JTBL_HUFF * th, JIF_SCANNER * s, huffsize_t *t){
             return e;
         }
         
-        c = (c << 1) + s->bit_nextbit;
+        code = (code << 1) + s->bit_nextbit;
     }
     
     huffindex_t j = th->valptr[i];
-    j += c - th->mincode[i];
+    j += code - th->mincode[i];
     *t = th->huffval[j];
     
     return  JERR_NONE;
@@ -128,17 +126,17 @@ JERR jhuff_decode(JTBL_HUFF * th, JIF_SCANNER * s, huffsize_t *t){
 
 
 JERR jhuff_receive(huffsize_t t, JIF_SCANNER * s, huffval_t * v){
+    JERR e = JERR_NONE;
+    
     if ( 0 == t){
-        return JERR_UNKNOWN;
+        *v = 0x00;
+        return e;
     }
     
     /* jif scan should based on byte,
      * let jhuff_receive based on NEXTBIT, which handle EOB.
      */
-    
-    *v = 0x00;
-    JERR e = JERR_NONE;
-    for ( int i = 0; i < t; i ++ ){
+    for ( huffsize_t i = 0; i < t; i ++ ){
         if ( JERR_NONE != (e = nextbit(s))) {
             break;
         }
@@ -154,8 +152,8 @@ huffval_t jhuff_extend(huffval_t v, huffsize_t t) {
     huffval_t vt = 1 << ( t - 1 );
     
     if ( v < vt ){          // when v is negative, it's a negative DIFF/AC value
-        vt = (-1 << t) + 1;         // is shifting a negative undefined ?
-        vt = (0xffff << t) + 1;     // is this expected effect ?
+        vt = ((-1) << t) + 1;         // is shifting a negative undefined ?
+//        vt = (0xffff << t) + 1;     // is this expected effect ?
         v += vt;
     }
     

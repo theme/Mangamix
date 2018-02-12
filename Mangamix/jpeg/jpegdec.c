@@ -92,7 +92,6 @@ bool dec_read_a_tbl_misc(pinfo dinfo, JIF_SCANNER *s){
                 }
                 
                 /* gen huffman table */
-                jhuff_gen_size_code(dinfo->tH[Th]);
                 jhuff_gen_decode_tbls(dinfo->tH[Th]);
             }
             
@@ -406,11 +405,11 @@ JERR dec_decode_data_unit(pinfo dinfo, JIF_SCANNER * s,
                           unsigned int sj, unsigned int du_x, unsigned int du_y ){
     
     if ( dinfo->is_dct_based ){
-        coeff_t ZZ[DCTSIZE];
+        coeff_t ZZ[DCTSIZE] = {0};
         
         /* decode DC coeff, using DC table specified in scan header. */
         JIF_SCAN_COMPONENT * sp = &dinfo->scan.comps[sj];
-        huffsize_t t;
+        huffval_t t;
         
         JERR e = jhuff_decode(dinfo->tH[sp->Td], s, &t);
         if ( JERR_NONE != e){
@@ -427,22 +426,22 @@ JERR dec_decode_data_unit(pinfo dinfo, JIF_SCANNER * s,
         ZZ[0] = sp->PRED + diff;
         
         /* decode AC coeff, using AC table specified in scan header. */
-        for (unsigned int K = 1; K != 63; K++){
-            for( int i = 1; i < DCTSIZE; i++){
-                ZZ[i] = 0;
-            }
-            
-            huffsize_t RS;
-            e = jhuff_decode(dinfo->tH[sp->Td], s, &RS);
+//        for( int i = 1; i < DCTSIZE; i++){
+//            ZZ[i] = 0;
+//        }
+        for (unsigned int K = 1; K < DCTSIZE; K++){
+            /* decode RS */
+            huffval_t RS;
+            e = jhuff_decode(dinfo->tH[sp->Ta], s, &RS);
             if ( JERR_NONE != e){
                 return e;
             }
-            coeff_t SSSS = RS % 16;
-            coeff_t RRRR = RS >> 4;
-            coeff_t R = RRRR;
+            huffval_t SSSS = RS % 16; /* 4-bit amplitude category */
+            huffval_t RRRR = RS >> 4; /* 4-bit run length */
+            huffval_t R = RRRR;
             
             if ( 0 == SSSS ) {
-                if ( 15 == R ) {    /* 0xF0: a run length of 15 zero coefficients followed by a coefficient of zero amplitude */
+                if ( 15 == R ) {    /* RS == 0xF0: (ZRL) a run length of 15 zero coefficients followed by a coefficient of zero amplitude */
                     K += 15;
                     continue;
                 } else {    /* EOB : all remaining coeff is 0 */
@@ -450,6 +449,7 @@ JERR dec_decode_data_unit(pinfo dinfo, JIF_SCANNER * s,
                 }
             } else {
                 K += R;
+                /* decode ZZ(K) */
                 e = jhuff_receive(SSSS, s, (huffval_t*)&ZZ[K]);
                 if ( JERR_NONE != e){
                     return e;
@@ -465,7 +465,7 @@ JERR dec_decode_data_unit(pinfo dinfo, JIF_SCANNER * s,
         
         /* calculate 8 × 8 inverse DCT. */
         //A.3.3
-        double IDCT[DCTWIDTH][DCTWIDTH];
+        double IDCT[DCTWIDTH][DCTWIDTH] = {0};
         j_idct_ZZ(IDCT, ZZ);
         
         /* level shift after IDCT */

@@ -112,19 +112,17 @@ typedef uint8_t huffval_t;
 typedef uint8_t huffsize_t;
 
 typedef struct {
-    /* from JIF */
+    /* given ( from JIF ) */
     short int       table_class;            /* (Table class) 0: DC | lossless table, 1: AC table */
     uint8_t         bits[HUFFCAT+1];        /* Number (0~255) of Huffman codes for code length i (0~16) */
     uint8_t         huffval[HUFFCAT*256];    /* HUFFVAL : symbol values list (in order of increasing code length.)
                                                  * B.2.4.2 (The meaning of each value is determined by the Huffman coding model)
                                                  */
-   
+    /* generated ( for decoding ) */
     uint8_t         huffsize[HUFFCAT*256];  /* HUFFSIZE : a list of code length */
-    int16_t         huffcode[HUFFCAT*256];  /* HUFFCODE : huffman codes corresponding to above length (F.2.2.3 ) */
-    unsigned int    lastk;
-    
-     /* generated for decoding */
-    int16_t         mincode[HUFFCAT+1];
+    uint16_t        huffcode[HUFFCAT*256];  /* HUFFCODE : huffman codes corresponding to above length */
+    uint16_t        lastk;                  /* last code index of HUFFCODE */
+    int16_t         mincode[HUFFCAT+1];     /* (F.2.2.3 ) signed 16-bit integers for convenience of –1 sets all of the bits. (... guaranteed by C99 standard to be portable regardless of the signed number representation of the system ) */
     int16_t         maxcode[HUFFCAT+1];
     uint16_t        valptr[HUFFCAT+1];
 } JTBL_HUFF;
@@ -138,10 +136,9 @@ void jhuff_set_val(JTBL_HUFF * fh, huffindex_t k, huffval_t v);
 JTBL_HUFF * jhuff_new(void);
 
 /* before decoding */
-void jhuff_gen_size_code(JTBL_HUFF * th);
 void jhuff_gen_decode_tbls(JTBL_HUFF * th);
 /* decode */
-JERR jhuff_decode(JTBL_HUFF * th, JIF_SCANNER * s, huffsize_t * t);
+JERR jhuff_decode(JTBL_HUFF * th, JIF_SCANNER * s, huffval_t * t);
 JERR jhuff_receive(huffsize_t t, JIF_SCANNER * s, huffval_t * v); /* places the next T bits of the serial bit string into the low order bits of DIFF */
 huffval_t jhuff_extend(huffval_t src, huffsize_t t); /* converts the partially decoded DIFF value of precision T to the full precision difference */
 

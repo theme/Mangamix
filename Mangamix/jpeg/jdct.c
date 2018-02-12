@@ -32,17 +32,21 @@ void j_idct_ZZ(double IDCT[DCTWIDTH][DCTWIDTH], coeff_t *ZZ){
         for (x=0; x<DCTWIDTH; x++) {
             
             s = 1.0;
+            
             for( v=0; v < DCTWIDTH; v++){
                 for( u=0; u< DCTWIDTH; u++){
+                    
                     if ( 0 == u && 0 == v){
-                        s *= 1 / sqrt(2);
+                        s *= 1 / 2;
                     }
+                    s *= uv_of_ZZ64(v, u, ZZ);
                     s *= cos(2*x + 1) * u * M_PI;
                     s *= cos(2*y + 1) * v * M_PI;
                     s /= 16;
                     s /= 16;
                 }
             }
+            
             IDCT[y][x] = s / 4.0;
         }
     }
