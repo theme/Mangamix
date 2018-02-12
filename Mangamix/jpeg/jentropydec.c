@@ -49,7 +49,7 @@ void jif_huff_set_val(JIF_HUFF * fh, huff_index i, huff_val v){
 /* expand table size if smaller than i */
 bool touch_i(JTBL_HUFF * th, huff_index i){
     if( th->lastk < i) {
-        th->v = realloc(th->v, 2 * i * sizeof(huff_v));
+        th->v = realloc(th->v, 2 * i * sizeof(huff_v)); // TODO: sometimes will SIGABRT
     }
     
     if (NULL != th->v)
@@ -146,7 +146,7 @@ JTBL_HUFF * jtbl_huff_from_jif(JIF_HUFF * fh){
 
 
 JERR nextbit(JIF_SCANNER * s){
-    byte bit, b2;
+    byte b2;
     if ( 0 == s->bit_cnt){
         s->bit_B = jif_scan_next_byte(s);
         s->bit_cnt = 8;
@@ -162,7 +162,7 @@ JERR nextbit(JIF_SCANNER * s){
         }
     }
     
-    bit = s->bit_B >> 7;
+    s->bit_nextbit = s->bit_B >> 7;
     s->bit_cnt--;
     s->bit_B <<= 1;
     return JERR_NONE;
