@@ -86,6 +86,7 @@ byte jif_next_byte(JIF_SCANNER * s){
 
 byte jif_scan_next_byte(JIF_SCANNER * s){
     s->b += 8;
+    s->B = s->b / 8;    // TODO: debug
     return s->pjif[s->b / 8];
 }
 

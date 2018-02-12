@@ -88,10 +88,6 @@
 #define err(S) fprintf(stderr, S)
 #define logger(S) printf(S)
 
- /********************************************************
-  Entropy coding routine
-  ********************************************************/
-
 
 typedef enum {
     JERR_NONE = 0,
@@ -101,41 +97,56 @@ typedef enum {
     JERR_SCAN_MISS_RST = -4
 } JERR;
 
-#define HUFFCAT    16
 
-typedef uint8_t huff_size;
-typedef uint16_t huff_index;
-typedef int16_t huff_code;  /* F.2.2.3 */
-typedef uint8_t huff_val;   /* B.2.4.2 (The meaning of each value is determined by the Huffman coding model) */
+
+ /********************************************************
+  Entropy coding routine
+  ********************************************************/
 
 /* Huffman table in JIF file */
 
-typedef struct _jif_huff {
-    bool        Tc;             /* (Table class) 0: DC | lossless table, 1: AC table */
-    byte        bits[HUFFCAT];          /* Number (0~255) of Huffman codes of size (length) i (0~16) */
-    huff_val    *huffval;       /* HUFFVAL */
-    huff_index  huffval_capa;   /* realloc size of huffval */
-} JIF_HUFF;
+#define HUFFCAT    16
 
-typedef struct _jtbl_huff JTBL_HUFF;
+typedef uint16_t huffindex_t;
+typedef uint8_t huffval_t;
+typedef uint8_t huffsize_t;
+
+typedef struct {
+    /* from JIF */
+    short int       table_class;            /* (Table class) 0: DC | lossless table, 1: AC table */
+    uint8_t         bits[HUFFCAT+1];        /* Number (0~255) of Huffman codes for code length i (0~16) */
+    uint8_t         huffval[HUFFCAT*256];    /* HUFFVAL : symbol values list (in order of increasing code length.)
+                                                 * B.2.4.2 (The meaning of each value is determined by the Huffman coding model)
+                                                 */
+   
+    uint8_t         huffsize[HUFFCAT*256];  /* HUFFSIZE : a list of code length */
+    int16_t         huffcode[HUFFCAT*256];  /* HUFFCODE : huffman codes corresponding to above length (F.2.2.3 ) */
+    unsigned int    lastk;
+    
+     /* generated for decoding */
+    int16_t         mincode[HUFFCAT+1];
+    int16_t         maxcode[HUFFCAT+1];
+    uint16_t        valptr[HUFFCAT+1];
+} JTBL_HUFF;
+
+#define HUFFVAL_INIT_SIZE 256
 
 /* basic */
-JIF_HUFF * jif_huff_new(void);
-void jif_huff_set_val(JIF_HUFF * fh, huff_index i, huff_val v);
+JTBL_HUFF * jhuff_new(void);
+void jhuff_set_val(JTBL_HUFF * fh, huffindex_t k, huffval_t v);
 
 JTBL_HUFF * jhuff_new(void);
 
-/* user */
-JTBL_HUFF * jtbl_huff_from_jif(JIF_HUFF * fh);
-
+/* before decoding */
+void jhuff_gen_size_code(JTBL_HUFF * th);
+void jhuff_gen_decode_tbls(JTBL_HUFF * th);
 /* decode */
-JERR jhuff_decode(JTBL_HUFF * th, JIF_SCANNER * s, huff_size * t);
-JERR jhuff_receive(huff_size t, JIF_SCANNER * s, huff_val * v); /* places the next T bits of the serial bit string into the low order bits of DIFF */
-huff_val jhuff_extend(huff_val src, huff_size t); /* converts the partially decoded DIFF value of precision T to the full precision difference */
+JERR jhuff_decode(JTBL_HUFF * th, JIF_SCANNER * s, huffsize_t * t);
+JERR jhuff_receive(huffsize_t t, JIF_SCANNER * s, huffval_t * v); /* places the next T bits of the serial bit string into the low order bits of DIFF */
+huffval_t jhuff_extend(huffval_t src, huffsize_t t); /* converts the partially decoded DIFF value of precision T to the full precision difference */
 
 /* cleanup */
 void jhuff_free(JTBL_HUFF *);
-void jif_huff_free(JIF_HUFF *);
 
 
 /********************************************************
@@ -161,7 +172,6 @@ typedef struct J_DEC_INFO {
     /* (per image) pointer to tables spec */
     JTBL_QUANT          tQ[JTBL_NUM];
     JTBL_HUFF           *tH[JTBL_NUM];
-    JIF_HUFF            *jH[JTBL_NUM];
     
     /* (per frame) frame and component */
     JIF_FRAME_MODE      f_mode;     /* got from tables/misc. segments after SOI */

@@ -153,6 +153,7 @@ typedef struct jif_scanner {
     uint8_t    bit_cnt;     /* jhuff:: nextbit() helper */
     byte       bit_B;       /* jhuff:: nextbit() helper */
     byte       bit_nextbit; /* jhuff:: nextbit() helper */
+    jif_offset B;   /* debug helper */
 } JIF_SCANNER;
 
 JIF_SCANNER * jif_new_scanner(byte * jif_array, jif_offset array_size);
