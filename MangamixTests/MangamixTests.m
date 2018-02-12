@@ -110,6 +110,12 @@
     
     JifDecoder * jifDecoder = [JifDecoder alloc];
     CGImageRef cgi = [jifDecoder decodeJifData:fileData];
+    
+    XCTAssert(cgi);
+    if ( !cgi ) {
+        return;
+    }
+    
     NSSize s;
     s.height = CGImageGetHeight(cgi);
     s.width = CGImageGetWidth(cgi);
