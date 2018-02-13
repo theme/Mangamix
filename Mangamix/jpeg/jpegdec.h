@@ -168,7 +168,7 @@ typedef struct J_DEC_INFO {
     
     /* (per image) pointer to tables spec */
     JTBL_QUANT          tQ[JTBL_NUM];
-    JTBL_HUFF           *tH[JTBL_NUM];
+    JTBL_HUFF           *tH[2][JTBL_NUM];
     
     /* (per frame) frame and component */
     JIF_FRAME_MODE      f_mode;     /* got from tables/misc. segments after SOI */

@@ -17,7 +17,8 @@ pinfo j_dec_new(void) {
     p->scan.comps = malloc(0);
     
     for(int i =0; i < JTBL_NUM; i++){
-        p->tH[i] = jhuff_new();
+        p->tH[0][i] = jhuff_new();
+        p->tH[1][i] = jhuff_new();
     }
     return p;
 };
@@ -77,22 +78,23 @@ bool dec_read_a_tbl_misc(pinfo dinfo, JIF_SCANNER *s){
                 uint8_t Tc = ( b & 0xF0 )  >> 4 ;       /* table class 0: DC, 1: AC */
                 uint8_t Th = b & 0x0F;
                 
-                dinfo->tH[Th]->table_class = Tc;
+                dinfo->tH[Tc][Th]->table_class = Tc;
+                printf("define Huffman table @%llu Type %u, No. %u\n", jif_get_offset(s), Tc, Th);
                 
                 for(int i = 0; i < 16; i++){
-                    dinfo->tH[Th]->bits[i] = jif_scan_next_byte(s); offset++;
+                    dinfo->tH[Tc][Th]->bits[i] = jif_scan_next_byte(s); offset++;
                 }
                 
                 int k = 0;
                 for(int i = 0; i < 16; i++){
-                    for(int j = 0; j < dinfo->tH[Th]->bits[i]; j++){
-                        jhuff_set_val(dinfo->tH[Th], k++, jif_scan_next_byte(s));
+                    for(int j = 0; j < dinfo->tH[Tc][Th]->bits[i]; j++){
+                        jhuff_set_val(dinfo->tH[Tc][Th], k++, jif_scan_next_byte(s));
                         offset++;
                     }
                 }
                 
                 /* gen huffman table */
-                jhuff_gen_decode_tbls(dinfo->tH[Th]);
+                jhuff_gen_decode_tbls(dinfo->tH[Tc][Th]);
             }
             
         }
@@ -411,7 +413,7 @@ JERR dec_decode_data_unit(pinfo dinfo, JIF_SCANNER * s,
         JIF_SCAN_COMPONENT * sp = &dinfo->scan.comps[sj];
         huffval_t t;
         
-        JERR e = jhuff_decode(dinfo->tH[sp->Td], s, &t);
+        JERR e = jhuff_decode(dinfo->tH[0][sp->Td], s, &t); /* DC use type 0 huffman table */
         if ( JERR_NONE != e){
             return e;
         }
@@ -432,7 +434,7 @@ JERR dec_decode_data_unit(pinfo dinfo, JIF_SCANNER * s,
         for (unsigned int K = 1; K < DCTSIZE; K++){
             /* decode RS */
             huffval_t RS;
-            e = jhuff_decode(dinfo->tH[sp->Ta], s, &RS);
+            e = jhuff_decode(dinfo->tH[1][sp->Ta], s, &RS); /* AC use type 1 huffman table */
             if ( JERR_NONE != e){
                 return e;
             }
@@ -447,15 +449,15 @@ JERR dec_decode_data_unit(pinfo dinfo, JIF_SCANNER * s,
                 } else {    /* EOB : all remaining coeff is 0 */
                     break;
                 }
-            } else {
-                K += R;
-                /* decode ZZ(K) */
-                e = jhuff_receive(SSSS, s, (huffval_t*)&ZZ[K]);
-                if ( JERR_NONE != e){
-                    return e;
-                }
-                ZZ[K] = jhuff_extend(ZZ[K], SSSS);
             }
+            
+            K += R;
+            /* decode ZZ(K) */
+            e = jhuff_receive(SSSS, s, (huffval_t*)&ZZ[K]);
+            if ( JERR_NONE != e){
+                return e;
+            }
+            ZZ[K] = jhuff_extend(ZZ[K], SSSS);
         }
         
         /* dequantize using table destination specified in the frame header. */
