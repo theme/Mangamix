@@ -572,30 +572,27 @@ JERR dec_decode_scan(pinfo dinfo, JIF_SCANNER * s){
     
     JERR e;
     
-    if ( dinfo->Ri > 0 ){   /* restart interval is enabled */
-        // How many intervals are there in this scan ?
-        // expected number = total MCU per scan (X * Y / data unit size) / MCU per interval (Ri)
-        /* B.2.1
-         If restart is enabled, the number of entropy-coded segments (MCU x n) is defined by the size of the image and the defined restart interval
+    if ( dinfo->Ri > 0 ){/* restart marker is enabled */
+        /* How many ECS are there in this scan ?
+         * B.2.1 : If restart is enabled, the number of entropy-coded segments (MCU x n)
+         * is defined by the size of the image and the defined restart interval
          */
-        /* TODO: dinfo->frame.Y ?= 0 */
-        int last = dinfo->frame.X * dinfo->frame.Y / data_unit_width(dinfo) / dinfo->Ri;
-        for ( int i =0; i < last - 1; i++){
+        while(true){
             e = dec_decode_restart_interval(dinfo, s);
             
             /* expected RST marker */
             JIF_MARKER m = jif_current_byte(s);
-            
             if( M_RST0 <= m && m <= M_RST7){
                 s->bit_cnt = 0;
                 continue;
             } else {
-                return JERR_SCAN_MISS_RST;
+                break;
             }
+            
         }
+    } else { /* restart marker NOT enabled */
+        e = dec_decode_ECS(dinfo, s);
     }
-    
-    e = dec_decode_ECS(dinfo, s);
     
     return e;
 }
@@ -608,32 +605,29 @@ unsigned int dec_decode_multi_scan(pinfo dinfo, JIF_SCANNER * s){
         
         e = dec_decode_scan(dinfo, s);
         
-        if (JERR_NONE == e){
-            ++scan_count;
-        } else if ( JERR_HUFF_NEXTBIT_DNL == e ){
-            
-            /* DNL is expected only after 1st scan, while frame.Y is not defined in frame header. */
-            if( 0 == dinfo->frame.Y ){
-                if(M_DNL == jif_current_marker(s)){
+        switch (e) { /* error handling */
+            case JERR_NONE:
+                ++scan_count;
+                break;
+            case JERR_HUFF_NEXTBIT_DNL:
+                /* handle DNL
+                 which is expected only after 1st scan,
+                 while frame.Y is not defined in frame header. */
+                if( 0 == dinfo->frame.Y && M_DNL == jif_current_marker(s)){
                     printf("%x @%llu DNL\n", M_DNL, jif_get_offset(s));
-                    if(!dec_read_DNL(dinfo, s)){
-                        return scan_count;
+                    if(dec_read_DNL(dinfo, s)){
+                        continue;
                     }
-                } else {
-                    err("error: lack of DNL (frame.Y == 0).");
-                    return scan_count;
                 }
-            }
-            continue;   /* terminate current scan */
-        } else if ( JERR_SCAN_MISS_RST == e) {
-            continue;
+                break;
+            default: /* error unknown */
+                if (M_EOI == jif_current_byte(s)){
+                    /* EOI or more scan (after 1st scan) */
+                    e = JERR_NONE;
+                    return ++scan_count;
+                }
+                break;
         }
-        
-        /* EOI or more scan (after 1st scan) */
-        if (M_EOI == jif_current_marker(s)){
-            break;
-        }
-        
     }
     
     return scan_count;

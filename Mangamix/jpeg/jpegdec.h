@@ -93,8 +93,7 @@ typedef enum {
     JERR_NONE = 0,
     JERR_MALLOC = -1,  /* not enough memory */
     JERR_UNKNOWN = -2,
-    JERR_HUFF_NEXTBIT_DNL = -3,
-    JERR_SCAN_MISS_RST = -4
+    JERR_HUFF_NEXTBIT_DNL = -3
 } JERR;
 
 
