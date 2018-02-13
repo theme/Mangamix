@@ -78,23 +78,26 @@ bool dec_read_a_tbl_misc(pinfo dinfo, JIF_SCANNER *s){
                 uint8_t Tc = ( b & 0xF0 )  >> 4 ;       /* table class 0: DC, 1: AC */
                 uint8_t Th = b & 0x0F;
                 
-                dinfo->tH[Tc][Th]->table_class = Tc;
                 printf("define Huffman table @%llu Type %u, No. %u\n", jif_get_offset(s), Tc, Th);
                 
-                for(int i = 0; i < 16; i++){
-                    dinfo->tH[Tc][Th]->bits[i] = jif_scan_next_byte(s); offset++;
+                JTBL_HUFF * th = dinfo->tH[Tc][Th];
+                memset(th, 0, sizeof(JTBL_HUFF));
+                
+                th->table_class = Tc;
+                
+                for(int i = 1; i <= 16; i++){
+                    th->bits[i] = jif_scan_next_byte(s); offset++;
                 }
                 
                 int k = 0;
-                for(int i = 0; i < 16; i++){
-                    for(int j = 0; j < dinfo->tH[Tc][Th]->bits[i]; j++){
-                        jhuff_set_val(dinfo->tH[Tc][Th], k++, jif_scan_next_byte(s));
-                        offset++;
+                for(int i = 1; i <= 16; i++){
+                    for(int j = 0; j < th->bits[i]; j++){
+                        jhuff_set_val(th, k++, jif_scan_next_byte(s)); offset++;
                     }
                 }
                 
                 /* gen huffman table */
-                jhuff_gen_decode_tbls(dinfo->tH[Tc][Th]);
+                jhuff_gen_decode_tbls(th);
             }
             
         }
@@ -407,7 +410,7 @@ JERR dec_decode_data_unit(pinfo dinfo, JIF_SCANNER * s,
                           unsigned int sj, unsigned int du_x, unsigned int du_y ){
     
     if ( dinfo->is_dct_based ){
-        coeff_t ZZ[DCTSIZE] = {0};
+        int16_t ZZ[DCTSIZE] = {0};
         
         /* decode DC coeff, using DC table specified in scan header. */
         JIF_SCAN_COMPONENT * sp = &dinfo->scan.comps[sj];
@@ -446,7 +449,7 @@ JERR dec_decode_data_unit(pinfo dinfo, JIF_SCANNER * s,
                 if ( 15 == R ) {    /* RS == 0xF0: (ZRL) a run length of 15 zero coefficients followed by a coefficient of zero amplitude */
                     K += 15;
                     continue;
-                } else {    /* EOB : all remaining coeff is 0 */
+                } else {    /* N/A (in baseline) or EOB : all remaining coeff is left 0 */
                     break;
                 }
             }
@@ -543,11 +546,10 @@ JERR dec_decode_restart_interval(pinfo dinfo, JIF_SCANNER * s){
     }
     
     for(int i=0; i < dinfo->Ri; i++ ){
-        e = dec_decode_MCU(dinfo, s);
+        e = dec_decode_ECS(dinfo, s);
         if (JERR_NONE != e){
             return e;
         }
-        ++dinfo->m;
     }
     
     return JERR_NONE;
@@ -581,14 +583,12 @@ JERR dec_decode_scan(pinfo dinfo, JIF_SCANNER * s){
         for ( int i =0; i < last - 1; i++){
             e = dec_decode_restart_interval(dinfo, s);
             
-            if (JERR_NONE != e){
-                return e;
-            }
-            
             /* expected RST marker */
-            JIF_MARKER m = jif_scan_next_marker(s);
+            JIF_MARKER m = jif_current_byte(s);
+            
             if( M_RST0 <= m && m <= M_RST7){
                 s->bit_cnt = 0;
+                continue;
             } else {
                 return JERR_SCAN_MISS_RST;
             }
