@@ -8,64 +8,82 @@
 
 #include "jimg.h"
 
+void free_component(JIMG_COMPONENT * c){
+    free(c->data);
+    free(c);
+}
 
-JIMG * jimg_new(void){
+JIMG * jimg_new(uint16_t width, uint16_t height, uint16_t precision){
     JIMG * img;
     if( (img = malloc(sizeof(JIMG)))){
-        img->num_of_components = 0;
-        for(int i = 0; i < JMAX_COMPONENTS; i++){
-            img->comps[i] = malloc(0);
-            img->comp_map[i] = false;
-        }
-        img->X = 0;
-        img->Y = 0;
-    }
-    return img;
+        img->comps = malloc(0);
+        if (img->comps) {
+            img->comps_count = 0;
+        } else return 0;
+        img->X = width;
+        img->Y = height;
+        img->precision = precision;
+        return img;
+    } else return 0;
 }
 
-JIMG * jimg_set_components(JIMG * img, uint8_t index, uint16_t X, uint16_t Y, unsigned int precision){
-    JIMG_COMPONENT * newp;
-    if ( (newp = realloc(img->comps[index], sizeof(JIMG_COMPONENT)))) {
-        img->comps[index] = newp;
-        newp->data = realloc(newp->data, sizeof(JIMG_SAMPLE) * X * Y);
-        if(!newp->data) {
-            return NULL;
-        }
-        newp->X = X;
-        newp->Y = Y;
-        newp->precision = precision;
-        if( false == img->comp_map[index] ){
-            img->num_of_components ++;
-            img->comp_map[index] = true;
+JIMG_COMPONENT * jimg_add_component(JIMG * img, uint8_t comp_id, uint16_t width, uint16_t height){
+    JIMG_COMPONENT * c = 0;
+    int i;
+    for( i = 0; i < img->comps_count; i++){
+        c = &img->comps[i];
+        if (c->cid == comp_id){
+            free(c->data);
+            break;
         }
     }
     
-    return img;
+    if ( i == img->comps_count ){
+        img->comps = realloc(img->comps, (++img->comps_count) * sizeof(JIMG_COMPONENT));
+        if(img->comps){
+            c = &img->comps[img->comps_count-1];
+        }
+    }
+    
+    if(c){
+        c->X = width;
+        c->Y = height;
+        c->data = calloc(width * height, sizeof(uint16_t));
+        if(c->data)
+            return c;
+    }
+    return 0;
 }
 
-
-JIMG * jimg_write_sample(JIMG * img, uint8_t index, uint16_t x, uint16_t y, double s){
-    uint16_t smax = 1 << (img->comps[index]->precision - 1);
-    
+JIMG * jimg_write_sample(JIMG * img, uint8_t comp_id, uint16_t x, uint16_t y, double s){
+    uint16_t smax = 1 << (img->precision - 1);
     if ( s < 0 ){
          s = 0;
     } else if ( s > smax){
         s = smax;
     }
     
-    img->comps[index]->data[x * img->Y + y] = s;
-    return img;
-}
-
-void jimg_free(JIMG * img){
-    
-    for(int i = 0; i < JMAX_COMPONENTS; i++){
-        if( img->comp_map[i] ){
-            free(img->comps[i]->data);
-            free(img->comps[i]);
+    JIMG_COMPONENT * c;
+    int i;
+    for( i = 0 ; i < img->comps_count; i++){
+        c = &img->comps[i];
+        if(c->cid == comp_id){
+            if ( x <= c->X || y <= c->Y ){
+                c->data[y * img->X + x] = s;
+                return img;
+            } else return 0;
         }
     }
     
+    return 0;
+}
+
+void jimg_free(JIMG * img){
+    int i;
+    for( i = 0 ; i < img->comps_count; i++){
+        free(img->comps[i].data);
+    }
+    free(img->comps);
     free(img);
 }
 
@@ -86,19 +104,12 @@ void jbmp_make_RGB24(JIMG * img, JBMP * bmp){
     bmp->data_size = 3 * img->X * img->Y;
     bmp->data = realloc(bmp->data, bmp->data_size);
     
-    int c = img->num_of_components;
-    JIMG_COMPONENT * comps[c];
-    
-    for ( int i = 0, n = 0; i < JMAX_COMPONENTS && n <= c; i++){
-        if(img->comp_map[i]){
-            comps[n++] = img->comps[i];
-        }
-    }
+    int c = img->comps_count;
     
     JIMG_COMPONENT * cp;
     int cpi, bi;
     if ( 1 == c ) {
-        cp = comps[0];
+        cp = &img->comps[0];
         for (int j = 0 ; j < bmp->height; j++) {
             for( int i=0; i < bmp->width; i++ ){
                 bi = j * bmp->width + i;
@@ -112,7 +123,7 @@ void jbmp_make_RGB24(JIMG * img, JBMP * bmp){
         for (int j = 0 ; j < bmp->height; j++) {
             for( int i=0; i < bmp->width; i++ ){
                 for ( int k = 0; k < c; k++ ){
-                    cp = comps[k];
+                    cp = &img->comps[k];
                     bi = j * bmp->width + i;
                     cpi = j * (cp->Y / bmp->height) + i * (cp->X / bmp->width);
                     bmp->data[bi + k] = cp->data[cpi];     /* R, G, B */
@@ -123,7 +134,6 @@ void jbmp_make_RGB24(JIMG * img, JBMP * bmp){
 }
 
 void jbmp_release(void *info, const void *data, size_t size){
-    
     jbmp_free((JBMP *)data);
 }
 

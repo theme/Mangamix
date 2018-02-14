@@ -25,19 +25,19 @@
 typedef uint16_t    JIMG_SAMPLE;        /* enough to save 8 or 12 bit precision integer */
 
 typedef struct {
+    uint8_t     cid;            /* a unique label to the ith component */
     uint16_t    X;
     uint16_t    Y;
-    unsigned int  precision;          /* DCT: 8,12; those lossless: 2 ~ 16 */
-    JIMG_SAMPLE    *   data;                  /* the decoded image data */
+    JIMG_SAMPLE *data;    /* the decoded image data */
 } JIMG_COMPONENT;
 
 
 typedef struct {
-    uint16_t    X;      /* maximum component's width */
-    uint16_t    Y;
-    JIMG_COMPONENT  *comps[JMAX_COMPONENTS];
-    bool        comp_map[JMAX_COMPONENTS];
-    uint8_t     num_of_components;
+    uint16_t        X;      /* maximum component's width */
+    uint16_t        Y;
+    unsigned int    precision;        /* DCT: 8,12; those lossless: 2 ~ 16 */
+    JIMG_COMPONENT  *comps;
+    int             comps_count;    /* number of component */
 } JIMG;
 
 /* the output format */
@@ -59,10 +59,9 @@ typedef struct {
 } JBMP;
 
 /* construct */
-JIMG * jimg_new(void);
-JIMG * jimg_set_components(JIMG * img, uint8_t index, uint16_t X, uint16_t Y, unsigned int precision);
-JIMG * jimg_write_sample(JIMG * img, uint8_t index, uint16_t x, uint16_t y, double s);
-
+JIMG * jimg_new(uint16_t width, uint16_t height, uint16_t precision);
+JIMG_COMPONENT * jimg_add_component(JIMG * img, uint8_t comp_id, uint16_t width, uint16_t height);
+JIMG * jimg_write_sample(JIMG * img, uint8_t comp_i, uint16_t x, uint16_t y, double s);
 
 /* free */
 void jimg_free(JIMG * img);

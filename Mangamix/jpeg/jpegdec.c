@@ -11,7 +11,7 @@
 
 pinfo j_dec_new(void) {
     pinfo p = (pinfo) calloc(1, sizeof(struct J_DEC_INFO));
-    p->img = jimg_new();
+    p->img = 0;
     p->bmp = jbmp_new();
     p->frame.comps = malloc(0);  /* so that dec_read_sof() can freely realloc memory on it, and free. */
     p->scan.comps = malloc(0);
@@ -238,7 +238,7 @@ bool dec_read_sof(pinfo dinfo, JIF_SCANNER * s){
 }
 
 
-void dec_update_img_after_sof (pinfo dinfo){
+void * dec_update_img_after_sof (pinfo dinfo){
     JIF_FRAME_COMPONENT * p;
     byte Hmax = 1, Vmax = 1;
     for(int i = 0; i < dinfo->frame.Nf; i++){
@@ -251,17 +251,26 @@ void dec_update_img_after_sof (pinfo dinfo){
         }
     }
     
-    for(int i = 0; i < dinfo->frame.Nf; i++){
-        p = &dinfo->frame.comps[i];
-        jimg_set_components(dinfo->img,
-                            p->C,
-                            dinfo->frame.X * p->H / Hmax,
-                            dinfo->frame.Y * p->V / Vmax,
-                            dinfo->frame.P);
+    /* only new / realloc dinfo->img here */
+    if(dinfo->img){
+        jimg_free(dinfo->img);
     }
     
-    dinfo->img->X = dinfo->frame.X;
-    dinfo->img->Y = dinfo->frame.Y;
+    dinfo->img = jimg_new(dinfo->frame.X, dinfo->frame.Y, dinfo->frame.P);
+    
+    if(!dinfo->img)
+        return 0 ;
+    
+    for(int i = 0; i < dinfo->frame.Nf; i++){
+        p = &dinfo->frame.comps[i];
+        if(!(jimg_add_component(dinfo->img,
+                           p->C,
+                           dinfo->frame.X * p->H / Hmax,
+                           dinfo->frame.Y * p->V / Vmax)))
+           return 0;
+    }
+    
+    return dinfo->img;
 }
 
 /* private: try read one sof marker. */
@@ -313,12 +322,10 @@ bool j_dec_read_jpeg_header(pinfo dinfo){
         
         /* read SOF  */
         if (dec_prob_read_a_sof_param(dinfo, s_soi)){   /* prob_read won't affect s_soi */
-            success = true;
-            
-            /* to get image size */
-            dec_update_img_after_sof(dinfo);
-            
-            break;
+            if(dec_update_img_after_sof(dinfo)){
+                success = true;
+                break;
+            }
         }
     }
     
@@ -333,6 +340,10 @@ unsigned long j_info_img_width(pinfo dinfo){
 unsigned long j_info_img_height(pinfo dinfo){
     return dinfo->img->Y;
 };
+
+unsigned int j_info_get_components(pinfo dinfo){
+    return dinfo->img->comps_count;
+}
 
 bool dec_read_scan_header(pinfo dinfo, JIF_SCANNER * s){
     JIF_MARKER m = jif_current_marker(s);
@@ -667,7 +678,8 @@ unsigned int dec_decode_multiple_image(pinfo dinfo, JIF_SCANNER * s){
                 if(!dec_read_sof(dinfo, s))     /* frame.Y may not present */
                     break;
                 
-                dec_update_img_after_sof(dinfo);
+                if(!dec_update_img_after_sof(dinfo))
+                    break;
                 
                 if( 1 <= dec_decode_multi_scan(dinfo, s)){
                     img_counter ++;

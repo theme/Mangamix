@@ -189,6 +189,7 @@ bool j_dec_read_jpeg_header(pinfo dinfo);    /* read a frame in image */
 
 unsigned long j_info_img_width(pinfo dinfo);
 unsigned long j_info_img_height(pinfo dinfo);
+unsigned int j_info_get_components(pinfo dinfo);
 
 bool j_dec_decode(pinfo dinfo);
 
