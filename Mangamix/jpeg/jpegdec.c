@@ -253,7 +253,7 @@ bool dec_read_DNL(pinfo dinfo, JIF_SCANNER *s ){
     return true;
 }
 
-void * dec_update_img_after_sof (pinfo dinfo){
+void * dec_update_img_dimensions (pinfo dinfo){
     JIF_FRAME_COMPONENT * p;
     byte Hmax = 1, Vmax = 1;
     for(int i = 0; i < dinfo->frame.Nf; i++){
@@ -267,14 +267,11 @@ void * dec_update_img_after_sof (pinfo dinfo){
     }
     
     /* only new / realloc dinfo->img here */
-    if(dinfo->img){
-        jimg_free(dinfo->img);
+    if(!dinfo->img){
+        dinfo->img = jimg_new(dinfo->frame.X, dinfo->frame.Y, dinfo->frame.P);
+        if(!dinfo->img)
+            return 0 ;
     }
-    
-    dinfo->img = jimg_new(dinfo->frame.X, dinfo->frame.Y, dinfo->frame.P);
-    
-    if(!dinfo->img)
-        return 0 ;
     
     for(int i = 0; i < dinfo->frame.Nf; i++){
         p = &dinfo->frame.comps[i];
@@ -337,13 +334,14 @@ bool j_dec_read_jpeg_header(pinfo dinfo){
         
         /* read SOF  */
         if (dec_prob_read_a_sof_param(dinfo, s_soi)){   /* prob_read won't affect s_soi */
-            if(dec_update_img_after_sof(dinfo)){
+            if(dec_update_img_dimensions(dinfo)){
                 if (0 != dinfo->frame.Y){
                     success = true;
                 } else {
                     if(jif_scan_next_maker_of(M_DNL, s_soi))
                         if(dec_read_DNL(dinfo, s_soi))
-                            success = true;
+                            if(dec_update_img_dimensions(dinfo))
+                                success = true;
                 }
                 break;
             }
@@ -633,6 +631,7 @@ unsigned int dec_decode_multi_scan(pinfo dinfo, JIF_SCANNER * s){
                 if( 0 == dinfo->frame.Y && M_DNL == jif_current_marker(s)){
                     printf("%x @%llu DNL\n", M_DNL, jif_get_offset(s));
                     if(dec_read_DNL(dinfo, s)){
+                        dec_update_img_dimensions(dinfo);
                         continue;
                     }
                 }
@@ -684,7 +683,7 @@ unsigned int dec_decode_multiple_image(pinfo dinfo, JIF_SCANNER * s){
                 if(!dec_read_sof(dinfo, s))     /* frame.Y may not present */
                     break;
                 
-                if(!dec_update_img_after_sof(dinfo))
+                if(!dec_update_img_dimensions(dinfo))
                     break;
                 
                 if( 1 <= dec_decode_multi_scan(dinfo, s)){
