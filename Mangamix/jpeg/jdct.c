@@ -18,34 +18,42 @@ const uint16_t ZZi64[64] =
     21, 34, 37, 47, 50, 56, 59, 61,
     35, 36, 48, 49, 57, 58, 62, 63};
 
-coeff_t uv_of_ZZ64(uint16_t v, uint16_t u, coeff_t *ZZ){
-    return ZZ[ZZi64[v*8 + u]];
-}
-
 void j_idct_ZZ(double IDCT[DCTWIDTH][DCTWIDTH], coeff_t *ZZ){
     uint16_t y, x;
     uint16_t v, u;
     
-    double s;
+    double s, sum;
     
     for (y=0; y<DCTWIDTH; y++) {
         for (x=0; x<DCTWIDTH; x++) {
             
-            s = 1.0;
-            
-            for( v=0; v < DCTWIDTH; v++){
-                for( u=0; u< DCTWIDTH; u++){
+            sum = 0;
+            for( u=0; u< DCTWIDTH; u++){
+                for( v=0; v < DCTWIDTH; v++){
                     
+                    s = 1.0;
                     if ( 0 == u && 0 == v){
-                        s *= 0.5;
+                        s /= 2;
                     }
-                    s *= uv_of_ZZ64(v, u, ZZ);
+                    s *= ZZ[ZZi64[v*8 + u]];
                     s *= cos((2*x + 1) * u * M_PI / 16);
                     s *= cos((2*y + 1) * v * M_PI / 16);
+                    sum += s;
                 }
             }
             
-            IDCT[y][x] = s / 4.0;
+            IDCT[y][x] = sum / 4;
         }
     }
+}
+
+void j_ZZ_dbg(coeff_t *ZZ){
+    // Debug
+    coeff_t dbg[8][8];
+    for(int j=0; j< 8; j++){
+        for (int i = 0; i < 8 ; i++){
+            dbg[j][i] = ZZ[ZZi64[j*8 + i]];
+        }
+    }
+    return;
 }

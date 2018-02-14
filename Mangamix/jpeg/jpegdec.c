@@ -8,7 +8,6 @@
 
 #include "jpegdec.h"
 
-
 pinfo j_dec_new(void) {
     pinfo p = (pinfo) calloc(1, sizeof(struct J_DEC_INFO));
     p->img = 0;
@@ -421,7 +420,7 @@ JERR dec_decode_data_unit(pinfo dinfo, JIF_SCANNER * s,
                           unsigned int sj, unsigned int du_x, unsigned int du_y ){
     
     if ( dinfo->is_dct_based ){
-        int16_t ZZ[DCTSIZE] = {0};
+        coeff_t ZZ[DCTSIZE] = {0};
         
         /* decode DC coeff, using DC table specified in scan header. */
         JIF_SCAN_COMPONENT * sp = &dinfo->scan.comps[sj];
@@ -484,6 +483,8 @@ JERR dec_decode_data_unit(pinfo dinfo, JIF_SCANNER * s,
         double IDCT[DCTWIDTH][DCTWIDTH] = {0};
         j_idct_ZZ(IDCT, ZZ);
         
+        j_ZZ_dbg(ZZ);
+        
         /* level shift after IDCT */
         uint16_t y, x;
         for (y=0; y<DCTWIDTH; y++) {
@@ -509,7 +510,7 @@ JERR dec_decode_data_unit(pinfo dinfo, JIF_SCANNER * s,
 /* comp > block (H x V in MCU) > unit > sample */
 
 JERR dec_decode_MCU(pinfo dinfo, JIF_SCANNER * s){
-    JERR e;
+    JERR e = JERR_NONE;
     for ( int j = 0; j < dinfo->scan.Ns; j++){
         JIF_SCAN_COMPONENT sp = dinfo->scan.comps[j];
         JIF_FRAME_COMPONENT * cp = frame_comp(dinfo, sp.Cs);
@@ -523,7 +524,7 @@ JERR dec_decode_MCU(pinfo dinfo, JIF_SCANNER * s){
         for (int h = 0; h < cp->H; h++){
             for (int v = 0; v < cp->V; v++){
                 
-                du_x = mcu_x * cp->H + h;    /* data unit x */
+                du_x = mcu_x * cp->H + h;    /* data unit count x */
                 du_y = mcu_y * cp->V + v;
                 e = dec_decode_data_unit(dinfo, s, j, du_x, du_y);  //TODO: unknown SIGABRT when choose a file from UI: (decoder shoud not be put in UI thread ?)
                 if (JERR_NONE != e){
@@ -537,7 +538,7 @@ JERR dec_decode_MCU(pinfo dinfo, JIF_SCANNER * s){
 }
 
 JERR dec_decode_ECS(pinfo dinfo, JIF_SCANNER * s){
-    JERR e;
+    JERR e = JERR_NONE;
     while(true){
         e = dec_decode_MCU(dinfo, s);
         if (JERR_NONE != e){
@@ -548,7 +549,7 @@ JERR dec_decode_ECS(pinfo dinfo, JIF_SCANNER * s){
 }
 
 JERR dec_decode_restart_interval(pinfo dinfo, JIF_SCANNER * s){
-    JERR e;
+    JERR e = JERR_NONE;
     /* reset on restart */
     if(dinfo->is_dct_based){
         for(int j = 0; j < dinfo->scan.Ns; j++){
@@ -581,7 +582,7 @@ JERR dec_decode_scan(pinfo dinfo, JIF_SCANNER * s){
     
     dinfo->m = 0;
     
-    JERR e;
+    JERR e = JERR_NONE;
     
     if ( dinfo->Ri > 0 ){/* restart marker is enabled */
         /* How many ECS are there in this scan ?
@@ -611,7 +612,7 @@ JERR dec_decode_scan(pinfo dinfo, JIF_SCANNER * s){
 /* decode multiple scan of a SOF */
 unsigned int dec_decode_multi_scan(pinfo dinfo, JIF_SCANNER * s){
     unsigned int scan_count = 0;
-    JERR e;
+    JERR e = JERR_NONE;
     while(dec_read_tables_misc(dinfo, s) && M_SOS == jif_current_marker(s)) {
         
         e = dec_decode_scan(dinfo, s);

@@ -115,14 +115,14 @@
     if ( !cgi ) {
         return;
     }
-    
-    NSSize s;
-    s.height = CGImageGetHeight(cgi);
-    s.width = CGImageGetWidth(cgi);
-    NSImage * nsi = [[NSImage alloc] initWithCGImage:cgi size:s];
+//    
+//    NSSize s;
+//    s.height = CGImageGetHeight(cgi);
+//    s.width = CGImageGetWidth(cgi);
+//    NSImage * nsi = [[NSImage alloc] initWithCGImage:cgi size:s];
     
     // compare data with stock decoder
-    NSImage * snsi = [[NSImage alloc] initByReferencingFile:filePath];
+//    NSImage * snsi = [[NSImage alloc] initByReferencingFile:filePath];
     
     // 
 
