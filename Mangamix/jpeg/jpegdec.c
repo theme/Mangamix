@@ -378,7 +378,6 @@ bool dec_read_scan_header(pinfo dinfo, JIF_SCANNER * s){
             dinfo->scan.comps = realloc(dinfo->scan.comps,
                                         Ns * sizeof(JIF_SCAN_COMPONENT));
             byte b;
-            int Mi = 0;
             int Cs;
             for(int j=0; j < Ns; j++){
                 Cs =jif_scan_next_byte(s); offset++;   /* Scan component selector */
@@ -386,24 +385,15 @@ bool dec_read_scan_header(pinfo dinfo, JIF_SCANNER * s){
                 b = jif_scan_next_byte(s); offset++;
                 dinfo->scan.comps[j].Td = ( b >> 4 );    /* Specifies one of four possible DC entropy coding table */
                 dinfo->scan.comps[j].Ta = ( 0x0f & b );  /* Specifies one of four possible AC entropy coding table */
-                
-                JIF_FRAME_COMPONENT * c = frame_comp(dinfo, Cs);
-                Mi += c->H * c->V;
             }
-            
-            if( Ns > 1 && Mi > 10) {
-                err("sample_per_MCU=sum_j_( H * V ) should < 10\n");
-                while(offset < Ls){
-                    jif_scan_next_byte(s); offset++;
-                }
-                return false;
-            }
-            
             dinfo->scan.Ss = jif_scan_next_byte(s); offset++;
             dinfo->scan.Se = jif_scan_next_byte(s); offset++;
             b = jif_scan_next_byte(s); offset++;
             dinfo->scan.Ah = ( b >> 4 );
             dinfo->scan.Al = ( 0x0f & b );
+            while (offset < Ls) {
+                jif_scan_next_byte(s); offset++;
+            }
         }
             return true;
         default:
@@ -574,20 +564,30 @@ JERR dec_decode_restart_interval(pinfo dinfo, JIF_SCANNER * s){
 
 /* note : a scan may enable restart interval Ri */
 JERR dec_decode_scan(pinfo dinfo, JIF_SCANNER * s){
+    JERR e = JERR_NONE;
     
     if(!dec_read_scan_header(dinfo, s)){
-        return false;
+        return JERR_BAD_SCAN_HEADER;
+    }
+    
+    JIF_SCAN_COMPONENT * sc;
+    JIF_FRAME_COMPONENT * fc;
+    dinfo->Nb = 0;
+    for(int j = 0; j < dinfo->scan.Ns; j++){
+        dinfo->scan.comps[j].PRED = 0;
+        
+        sc = &dinfo->scan.comps[j];
+        fc = frame_comp(dinfo, sc->Cs);
+        dinfo->Nb += fc->H * fc->V;
+    }
+    if( dinfo->scan.Ns > 1 && dinfo->Nb > 10) {
+        err("In scan Sum ( H * V ) should < 10\n");
+        return JERR_BAD_SCAN_HEADER;
     }
     
     s->bit_cnt = 0;
     
-    for(int j = 0; j < dinfo->scan.Ns; j++){
-        dinfo->scan.comps[j].PRED = 0;
-    }
-    
     dinfo->m = 0;
-    
-    JERR e = JERR_NONE;
     
     if ( dinfo->Ri > 0 ){/* restart marker is enabled */
         /* How many ECS are there in this scan ?
@@ -605,7 +605,6 @@ JERR dec_decode_scan(pinfo dinfo, JIF_SCANNER * s){
             } else {
                 break;
             }
-            
         }
     } else { /* restart marker NOT enabled */
         e = dec_decode_ECS(dinfo, s);
