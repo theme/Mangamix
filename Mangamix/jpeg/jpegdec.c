@@ -518,10 +518,12 @@ JERR dec_decode_MCU(pinfo dinfo, JIF_SCANNER * s){
         JIF_SCAN_COMPONENT sp = dinfo->scan.comps[j];
         JIF_FRAME_COMPONENT * cp = frame_comp(dinfo, sp.Cs);
         
+        JIMG_COMPONENT * ic = jimg_get_component(dinfo->img, sp.Cs);
+        
         int du_x, du_y; /* data unit (not sample) x, y within component */
-        int mcu_Xn = dinfo->frame.X / data_unit_width(dinfo) / cp->H ; /* number of MCU | data block in a row */
-        int mcu_x = dinfo->m % mcu_Xn;
-        int mcu_y = dinfo->m / mcu_Xn;
+        int mcu_per_line = ic->X / data_unit_width(dinfo) / cp->H ; /* number of MCU | data block in a row */
+        int mcu_x = dinfo->m % mcu_per_line;
+        int mcu_y = dinfo->m / mcu_per_line;
         
         /* do a data block, H x V data units */
         for (int h = 0; h < cp->H; h++){

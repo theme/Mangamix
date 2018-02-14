@@ -51,11 +51,25 @@ JIMG_COMPONENT * jimg_set_component(JIMG * img, uint8_t comp_id, uint16_t width,
     }
     
     if(c){
+        c->cid = comp_id;
         c->X = width;
         c->Y = height;
         c->data = realloc(c->data, width * height * sizeof(uint16_t));
         if(c->data)
             return c;
+    }
+    return 0;
+}
+
+
+JIMG_COMPONENT * jimg_get_component(JIMG * img, uint8_t comp_id){
+    JIMG_COMPONENT * c;
+    int i;
+    for( i = 0 ; i < img->comps_count; i++){
+        c = &img->comps[i];
+        if(c->cid == comp_id){
+            return c;
+        }
     }
     return 0;
 }
