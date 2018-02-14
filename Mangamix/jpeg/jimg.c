@@ -27,13 +27,15 @@ JIMG * jimg_new(uint16_t width, uint16_t height, uint16_t precision){
     } else return 0;
 }
 
-JIMG_COMPONENT * jimg_add_component(JIMG * img, uint8_t comp_id, uint16_t width, uint16_t height){
+JIMG_COMPONENT * jimg_set_component(JIMG * img, uint8_t comp_id, uint16_t width, uint16_t height){
     JIMG_COMPONENT * c = 0;
     int i;
+    
+    height = height == 0 ? 1 : height;  /* frame.Y may be known after 1st scan */
+    
     for( i = 0; i < img->comps_count; i++){
         c = &img->comps[i];
         if (c->cid == comp_id){
-            free(c->data);
             break;
         }
     }
@@ -42,15 +44,16 @@ JIMG_COMPONENT * jimg_add_component(JIMG * img, uint8_t comp_id, uint16_t width,
         img->comps = realloc(img->comps, (++img->comps_count) * sizeof(JIMG_COMPONENT));
         if(img->comps){
             c = &img->comps[img->comps_count-1];
+            c->data = malloc(0);
+            if(!c->data)
+                return 0;
         }
     }
-    
-    height = height == 0 ? 1 : height;
     
     if(c){
         c->X = width;
         c->Y = height;
-        c->data = calloc(width * height, sizeof(uint16_t));
+        c->data = realloc(c->data, width * height * sizeof(uint16_t));
         if(c->data)
             return c;
     }

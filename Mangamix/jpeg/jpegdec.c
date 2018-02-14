@@ -278,7 +278,7 @@ void * dec_update_img_after_sof (pinfo dinfo){
     
     for(int i = 0; i < dinfo->frame.Nf; i++){
         p = &dinfo->frame.comps[i];
-        if(!(jimg_add_component(dinfo->img,
+        if(!(jimg_set_component(dinfo->img,
                            p->C,
                            dinfo->frame.X * p->H / Hmax,
                            dinfo->frame.Y * p->V / Vmax)))
