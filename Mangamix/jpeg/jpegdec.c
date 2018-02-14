@@ -525,7 +525,7 @@ JERR dec_decode_MCU(pinfo dinfo, JIF_SCANNER * s){
                 
                 du_x = mcu_x * cp->H + h;    /* data unit x */
                 du_y = mcu_y * cp->V + v;
-                e = dec_decode_data_unit(dinfo, s, j, du_x, du_y);
+                e = dec_decode_data_unit(dinfo, s, j, du_x, du_y);  //TODO: unknown SIGABRT when choose a file from UI: (decoder shoud not be put in UI thread ?)
                 if (JERR_NONE != e){
                     return e;
                 }
