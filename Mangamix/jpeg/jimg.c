@@ -45,6 +45,8 @@ JIMG_COMPONENT * jimg_add_component(JIMG * img, uint8_t comp_id, uint16_t width,
         }
     }
     
+    height = height == 0 ? 1 : height;
+    
     if(c){
         c->X = width;
         c->Y = height;
@@ -68,7 +70,7 @@ JIMG * jimg_write_sample(JIMG * img, uint8_t comp_id, uint16_t x, uint16_t y, do
     for( i = 0 ; i < img->comps_count; i++){
         c = &img->comps[i];
         if(c->cid == comp_id){
-            if ( x <= c->X || y <= c->Y ){
+            if ( x <= c->X && y <= c->Y ){
                 c->data[y * img->X + x] = s;
                 return img;
             } else return 0;
