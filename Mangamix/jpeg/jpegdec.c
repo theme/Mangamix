@@ -34,7 +34,7 @@ JIF_FRAME_COMPONENT * frame_comp(pinfo dinfo, uint8_t Csj){
             return &dinfo->frame.comps[j];
         }
     }
-    return NULL;
+    return 0;
 }
 
 /* private: read top level tables|misc. */

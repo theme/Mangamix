@@ -119,10 +119,10 @@ typedef uint16_t width_t;
 
 typedef struct {
     unsigned int Lf;            /* Frame header length */
-    unsigned int P;             /* Sample precision */
-    width_t Y;             /* max Number of sample lines in source image */
-    width_t X;             /* max Number of samples per line */
-    unsigned int Nf;            /* Number of image components in frame ( 1 ~ 255 ) */
+    unsigned int P;             /* Sample precision (same for all components) */
+    width_t Y;  /* max Number of sample lines in source image , "row count" (known after scan header or 1st scan) */
+    width_t X;  /* max Number of samples per line (known after scan read header) */
+    unsigned int Nf;    /* Number of image components in this frame ( 1 ~ 255 ) */
     JIF_FRAME_COMPONENT * comps;    /* ( in this frame ) */
     JIF_FRAME_MODE mode;
 } JIF_FRAME;
