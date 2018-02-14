@@ -236,6 +236,22 @@ bool dec_read_sof(pinfo dinfo, JIF_SCANNER * s){
     return false;
 }
 
+bool dec_read_DNL(pinfo dinfo, JIF_SCANNER *s ){
+    uint16_t Ld = jif_scan_2_bytes(s);
+    uint16_t offset = 2;
+    if ( 4 != Ld ){
+        err("error reading DNL\n");
+        return false;
+    }
+    uint8_t NL = jif_scan_2_bytes(s); offset+=2;   /* number of image component in scan */
+    if( 0 == dinfo->frame.Y ){
+        dinfo->frame.Y = NL;
+    } else {
+        err("err: DNL: redefine max number of lines in image.\n");
+        return false;
+    }
+    return true;
+}
 
 void * dec_update_img_after_sof (pinfo dinfo){
     JIF_FRAME_COMPONENT * p;
@@ -322,7 +338,13 @@ bool j_dec_read_jpeg_header(pinfo dinfo){
         /* read SOF  */
         if (dec_prob_read_a_sof_param(dinfo, s_soi)){   /* prob_read won't affect s_soi */
             if(dec_update_img_after_sof(dinfo)){
-                success = true;
+                if (0 != dinfo->frame.Y){
+                    success = true;
+                } else {
+                    if(jif_scan_next_maker_of(M_DNL, s_soi))
+                        if(dec_read_DNL(dinfo, s_soi))
+                            success = true;
+                }
                 break;
             }
         }
@@ -390,23 +412,6 @@ bool dec_read_scan_header(pinfo dinfo, JIF_SCANNER * s){
             break;
     }
     return false;
-}
-
-bool dec_read_DNL(pinfo dinfo, JIF_SCANNER *s ){
-    uint16_t Ld = jif_scan_2_bytes(s);
-    uint16_t offset = 2;
-    if ( 4 != Ld ){
-        err("error reading DNL\n");
-        return false;
-    }
-    uint8_t NL = jif_scan_2_bytes(s); offset+=2;   /* number of image component in scan */
-    if( 0 == dinfo->frame.Y ){
-        dinfo->frame.Y = NL;
-    } else {
-        err("err: DNL: redefine max number of lines in image.\n");
-        return false;
-    }
-    return true;
 }
 
 // Data unit :
