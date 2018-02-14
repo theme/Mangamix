@@ -489,6 +489,8 @@ JERR dec_decode_data_unit(pinfo dinfo, JIF_SCANNER * s,
         /* write to img */
         for (y=0; y<DCTWIDTH; y++) {
             for (x=0; x<DCTWIDTH; x++) {
+                // TODO: use scan line buffer
+                // TODO: drop extra data unit
                 jimg_write_sample(dinfo->img, sp->Cs,
                                   du_x * data_unit_width(dinfo) + x,
                                   du_y * data_unit_width(dinfo) + y,
