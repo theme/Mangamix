@@ -25,13 +25,11 @@
 typedef uint16_t    JIMG_SAMPLE;        /* enough to save 8 or 12 bit precision integer */
 
 typedef struct {
-    uint8_t     cid;            /* a unique label to the ith component */
+    uint8_t     cid;       /* a unique label to the ith component */
     uint16_t    X;        
     uint16_t    Y;
-    uint16_t    ytmp;      /* in case Y is not defined */
-    JIMG_SAMPLE *data;    /* the decoded image data */
+    JIMG_SAMPLE **lines;    /* the decoded image data */
 } JIMG_COMPONENT;
-
 
 typedef struct {
     uint16_t        X;      /* maximum component's width */

@@ -5,11 +5,21 @@
 //  Created by theme on 26/01/2018.
 //  Copyright © 2018 theme. All rights reserved.
 //
+//  image
+//      *component
+//      *component
+//          *line
+//          *line
+//              sample sample sample sample ...
+
 
 #include "jimg.h"
 
 void free_component(JIMG_COMPONENT * c){
-    free(c->data);
+    for(int j = 0 ; j < c->Y; j++){
+        free(c->lines[j]);
+    }
+    free(c->lines);
     free(c);
 }
 
@@ -38,27 +48,53 @@ JIMG_COMPONENT * jimg_set_component(JIMG * img, uint8_t comp_id, uint16_t width,
         }
     }
     
-    if ( i == img->comps_count ){
+    if ( i == img->comps_count ){   /* no such component yet */
         img->comps = realloc(img->comps, (++img->comps_count) * sizeof(JIMG_COMPONENT));
         if(img->comps){
             c = &img->comps[img->comps_count-1];
-            c->data = malloc(0);
-            if(!c->data)
+            c->lines = malloc(0);
+            if(!c->lines)
                 return 0;
+            c->X = 0;
+            c->Y = 0;
         }
     }
     
     if(c){
-        c->cid = comp_id;
-        c->X = width;
+        uint16_t oy = c->Y;
+        
+        /* free old lines */
+        for(int j = oy -1 ; j > height -1; --j){
+            free(c->lines[j]);
+        }
+        
+        /* realloc line pointers */
+        c->lines = realloc(c->lines, height * sizeof(JIMG_SAMPLE *));
+        if(!c->lines)
+            return 0;
+        
+        /* alloc new lines */
+        for(int j = oy; j < height; j++){
+            c->lines[j] = malloc(0);
+            if(!c->lines[j])
+                return 0;
+        }
+        
         c->Y = height;
-        c->data = realloc(c->data, width * height * sizeof(uint16_t));
-        if(c->data)
-            return c;
+        
+        /* resize each line width */
+        for(int j = 0; j < height; j++){
+            c->lines[j] = realloc(c->lines[j], width * sizeof(JIMG_SAMPLE));
+            if(!c->lines[j])
+                return 0;
+        }
+        c->X = width;
+        c->cid = comp_id;
+        return c;
+    } else {
+        return 0;
     }
-    return 0;
 }
-
 
 JIMG_COMPONENT * jimg_get_component(JIMG * img, uint8_t comp_id){
     JIMG_COMPONENT * c;
@@ -81,12 +117,12 @@ JIMG * jimg_write_sample(JIMG * img, uint8_t comp_id, uint16_t x, uint16_t y, do
     }
     
     JIMG_COMPONENT * c;
-    int i;
-    for( i = 0 ; i < img->comps_count; i++){
+    
+    for( int i = 0 ; i < img->comps_count; i++){
         c = &img->comps[i];
         if(c->cid == comp_id){
-            if ( x <= c->X && y <= c->Y ){
-                c->data[y * img->X + x] = s;
+            if ( x < c->X && y < c->Y ){
+                c->lines[y][x] = s;
                 return img;
             } else return 0;
         }
@@ -96,11 +132,9 @@ JIMG * jimg_write_sample(JIMG * img, uint8_t comp_id, uint16_t x, uint16_t y, do
 }
 
 void jimg_free(JIMG * img){
-    int i;
-    for( i = 0 ; i < img->comps_count; i++){
-        free(img->comps[i].data);
+    for( int i = 0 ; i < img->comps_count; i++){
+        free_component(&img->comps[i]);
     }
-    free(img->comps);
     free(img);
 }
 
@@ -124,26 +158,28 @@ void jbmp_make_RGB24(JIMG * img, JBMP * bmp){
     int c = img->comps_count;
     
     JIMG_COMPONENT * cp;
-    int cpi, bi;
+    int cy, cx, bi;
     if ( 1 == c ) {
         cp = &img->comps[0];
         for (int j = 0 ; j < bmp->height; j++) {
             for( int i=0; i < bmp->width; i++ ){
                 bi = j * bmp->width + i;
-                cpi = j * (cp->Y / bmp->height) + i * (cp->X / bmp->width);
-                bmp->data[bi] = cp->data[cpi];     /* R */
-                bmp->data[bi+1] = cp->data[cpi];   /* G */
-                bmp->data[bi+2] = cp->data[cpi];   /* B */
+                cy = j * cp->Y /  bmp->height;
+                cx = i * cp->X / bmp->width;
+                bmp->data[bi] = cp->lines[cy][cx];     /* R */
+                bmp->data[bi+1] = cp->lines[cy][cx];   /* G */
+                bmp->data[bi+2] = cp->lines[cy][cx];   /* B */
             }
         }
     } else if ( 3 == c ) {
         for (int j = 0 ; j < bmp->height; j++) {
             for( int i=0; i < bmp->width; i++ ){
-                for ( int k = 0; k < c; k++ ){
+                for ( int k = 0; k < c; k++ ){     /* R, G, B */
                     cp = &img->comps[k];
                     bi = j * bmp->width + i;
-                    cpi = j * (cp->Y / bmp->height) + i * (cp->X / bmp->width);
-                    bmp->data[bi + k] = cp->data[cpi];     /* R, G, B */
+                    cy = j * cp->Y / bmp->height * cp->X;
+                    cx = i * cp->X / bmp->width;
+                    bmp->data[bi + k] = cp->lines[cy][cx];
                 }
             }
         }

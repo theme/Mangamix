@@ -21,4 +21,5 @@ typedef int8_t coeff_t;
 void j_idct_ZZ(double IDCT[DCTWIDTH][DCTWIDTH], coeff_t *ZZ);
 
 void j_ZZ_dbg(coeff_t *ZZ);
+
 #endif /* jdct_h */

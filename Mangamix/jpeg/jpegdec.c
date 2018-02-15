@@ -504,11 +504,14 @@ JERR dec_decode_data_unit(pinfo dinfo, JIF_SCANNER * s,
                 sx = du_x * data_unit_width(dinfo) + x;
                 sy = du_y * data_unit_width(dinfo) + y;
                 if (! dinfo->img->Y ){
+                    /* During the fist scan , if frame.Y is unknown,
+                     jimg_set_component before writing new sample point.
+                     */
                     if(!jimg_set_component(dinfo->img,
                                            sj,
                                            dinfo->img->X,
                                            sy + 1)){
-                        // bug: resize lose data. TODO: use 2d array in jimg comp
+                        // bug: resize lose data. TODO: use scanline array in jimg comp
                         return JERR_SET_COMPONENT;
                     }
                 }
@@ -636,8 +639,6 @@ JERR dec_decode_scan(pinfo dinfo, JIF_SCANNER * s){
          If marker is not DNL nor RST, then it might be EOI, return for
          upper level to test (because this function is decode_a_scan() ).
          
-         During the fist scan , if frame.Y is unknown, jimg_set_component before
-         writing new sample point.
          */
         
         if( !dinfo->scan.X_MCU ){  /* only needed to calculate once in a scan */
