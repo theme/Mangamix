@@ -49,14 +49,16 @@ JIMG_COMPONENT * jimg_set_component(JIMG * img, uint8_t comp_id, uint16_t width,
     }
     
     if ( i == img->comps_count ){   /* no such component yet */
-        img->comps = realloc(img->comps, (++img->comps_count) * sizeof(JIMG_COMPONENT));
+        img->comps = realloc(img->comps, (img->comps_count + 1) * sizeof(JIMG_COMPONENT));
         if(img->comps){
-            c = &img->comps[img->comps_count-1];
+            c = &img->comps[img->comps_count];
             c->lines = malloc(0);
             if(!c->lines)
                 return 0;
+            img->comps_count++;
             c->X = 0;
             c->Y = 0;
+            c->cid = comp_id;
         }
     }
     
@@ -89,7 +91,6 @@ JIMG_COMPONENT * jimg_set_component(JIMG * img, uint8_t comp_id, uint16_t width,
                 return 0;
         }
         c->X = width;
-        c->cid = comp_id;
         return c;
     } else {
         return 0;
@@ -177,7 +178,7 @@ void jbmp_make_RGB24(JIMG * img, JBMP * bmp){
                 for ( int k = 0; k < c; k++ ){     /* R, G, B */
                     cp = &img->comps[k];
                     bi = j * bmp->width + i;
-                    cy = j * cp->Y / bmp->height * cp->X;
+                    cy = j * cp->Y / bmp->height;
                     cx = i * cp->X / bmp->width;
                     bmp->data[bi + k] = cp->lines[cy][cx];
                 }
