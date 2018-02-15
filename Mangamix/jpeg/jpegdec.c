@@ -64,7 +64,6 @@ bool dec_read_a_tbl_misc(pinfo dinfo, JIF_SCANNER *s){
                     }
                 }
             }
-            dinfo->is_dct_based = true;
         }
             break;
         case M_DHT:
@@ -103,15 +102,13 @@ bool dec_read_a_tbl_misc(pinfo dinfo, JIF_SCANNER *s){
             break;
         case M_DAC:
             printf("%x @%llu DAC\n", m, jif_get_offset(s));
-            /* Arithmetic coding conditioning */
-            dinfo->is_use_arithmetic_coding = true;
             break;
         case M_DRI:
             printf("%x @%llu DRI\n", m, jif_get_offset(s));
         {   uint16_t Lr = jif_scan_2_bytes(s);
             uint16_t offset = 2;
             if ( 4 != Lr ) {err("error DRI length\n");}
-            dinfo->Ri = jif_scan_2_bytes(s);  offset+=2; /* restart interval is enabled if > 0 */
+            dinfo->scan.Ri = jif_scan_2_bytes(s);  offset+=2; /* restart interval is enabled if > 0 */
         }
             break;
         case M_COM:
@@ -255,7 +252,8 @@ bool dec_read_DNL(pinfo dinfo, JIF_SCANNER *s ){
 
 void * dec_update_img_dimensions (pinfo dinfo){
     JIF_FRAME_COMPONENT * p;
-    byte Hmax = 1, Vmax = 1;
+    
+    uint16_t Hmax = 1, Vmax = 1;
     for(int i = 0; i < dinfo->frame.Nf; i++){
         p = &(dinfo->frame.comps[i]);
         if (Hmax < p->H){
@@ -268,20 +266,36 @@ void * dec_update_img_dimensions (pinfo dinfo){
     
     /* only new / realloc dinfo->img here */
     if(!dinfo->img){
-        dinfo->img = jimg_new(dinfo->frame.X, dinfo->frame.Y, dinfo->frame.P);
+        dinfo->img = jimg_new(dinfo->frame.X,
+                              dinfo->frame.Y,
+                              dinfo->frame.P);
         if(!dinfo->img)
             return 0 ;
     }
     
     for(int i = 0; i < dinfo->frame.Nf; i++){
         p = &dinfo->frame.comps[i];
-        if(!(jimg_set_component(dinfo->img,
-                           p->C,
-                           dinfo->frame.X * p->H / Hmax,
-                           dinfo->frame.Y * p->V / Vmax)))
+        
+        /* (This is important:) inside scan subroutine there may not be enough
+         information, so the component H-V is calculated, and saved at this
+         place. */
+        double cX, cY;
+        
+        /* This is definition from standard. ceil(X * H / Hmax) */
+        cX = dinfo->frame.X * p->H / Hmax;  /* all int */
+        if( cX * Hmax < dinfo->frame.X * p->H ){
+            cX += 1;
+        }
+        
+        /* This is definition from standard */
+        cY = dinfo->frame.Y * p->V / Vmax;
+        if( cY * Vmax < dinfo->frame.Y * p->V ){
+            cY += 1;
+        }
+        
+        if(!(jimg_set_component(dinfo->img, p->C, cX, cY))) /* double -> int */
            return 0;
     }
-    
     return dinfo->img;
 }
 
@@ -366,40 +380,37 @@ unsigned int j_info_get_components(pinfo dinfo){
 
 bool dec_read_scan_header(pinfo dinfo, JIF_SCANNER * s){
     JIF_MARKER m = jif_current_marker(s);
-    switch (m) {
-        case M_SOS:
-            printf("%x @%llu SOS\n", m, jif_get_offset(s));
-        {   /* scan header */
-            uint16_t Ls = jif_scan_2_bytes(s);
-            uint16_t offset = 2;
-            
-            uint8_t Ns = jif_scan_next_byte(s); offset++;   /* number of image component in scan */
-            dinfo->scan.Ns = Ns;
-            dinfo->scan.comps = realloc(dinfo->scan.comps,
-                                        Ns * sizeof(JIF_SCAN_COMPONENT));
-            byte b;
-            int Cs;
-            for(int j=0; j < Ns; j++){
-                Cs =jif_scan_next_byte(s); offset++;   /* Scan component selector */
-                dinfo->scan.comps[j].Cs = Cs;
-                b = jif_scan_next_byte(s); offset++;
-                dinfo->scan.comps[j].Td = ( b >> 4 );    /* Specifies one of four possible DC entropy coding table */
-                dinfo->scan.comps[j].Ta = ( 0x0f & b );  /* Specifies one of four possible AC entropy coding table */
-            }
-            dinfo->scan.Ss = jif_scan_next_byte(s); offset++;
-            dinfo->scan.Se = jif_scan_next_byte(s); offset++;
-            b = jif_scan_next_byte(s); offset++;
-            dinfo->scan.Ah = ( b >> 4 );
-            dinfo->scan.Al = ( 0x0f & b );
-            while (offset < Ls) {
-                jif_scan_next_byte(s); offset++;
-            }
-        }
-            return true;
-        default:
-            break;
+    if( M_SOS != m ){
+        return false;
     }
-    return false;
+    printf("%x @%llu SOS\n", m, jif_get_offset(s));
+    
+    uint16_t Ls = jif_scan_2_bytes(s);
+    uint16_t offset = 2;
+    
+    uint8_t Ns = jif_scan_next_byte(s); offset++;   /* number of image component in scan */
+    dinfo->scan.Ns = Ns;
+    dinfo->scan.comps = realloc(dinfo->scan.comps,
+                                Ns * sizeof(JIF_SCAN_COMPONENT));
+    byte b;
+    int Cs;
+    for(int j=0; j < Ns; j++){
+        Cs =jif_scan_next_byte(s); offset++;   /* Scan component selector */
+        dinfo->scan.comps[j].Cs = Cs;
+        b = jif_scan_next_byte(s); offset++;
+        dinfo->scan.comps[j].Td = ( b >> 4 );    /* Specifies one of four possible DC entropy coding table */
+        dinfo->scan.comps[j].Ta = ( 0x0f & b );  /* Specifies one of four possible AC entropy coding table */
+    }
+    dinfo->scan.Ss = jif_scan_next_byte(s); offset++;
+    dinfo->scan.Se = jif_scan_next_byte(s); offset++;
+    b = jif_scan_next_byte(s); offset++;
+    dinfo->scan.Ah = ( b >> 4 );
+    dinfo->scan.Al = ( 0x0f & b );
+    while (offset < Ls) {
+        jif_scan_next_byte(s); offset++;
+    }
+    
+    return true;
 }
 
 // Data unit :
@@ -487,13 +498,23 @@ JERR dec_decode_data_unit(pinfo dinfo, JIF_SCANNER * s,
         }
         
         /* write to img */
+        uint16_t sx, sy;
         for (y=0; y<DCTWIDTH; y++) {
             for (x=0; x<DCTWIDTH; x++) {
-                // TODO: use scan line buffer
-                // TODO: drop extra data unit
+                sx = du_x * data_unit_width(dinfo) + x;
+                sy = du_y * data_unit_width(dinfo) + y;
+                if (! dinfo->img->Y ){
+                    if(!jimg_set_component(dinfo->img,
+                                           sj,
+                                           dinfo->img->X,
+                                           sy + 1)){
+                        // bug: resize lose data. TODO: use 2d array in jimg comp
+                        return JERR_SET_COMPONENT;
+                    }
+                }
                 jimg_write_sample(dinfo->img, sp->Cs,
-                                  du_x * data_unit_width(dinfo) + x,
-                                  du_y * data_unit_width(dinfo) + y,
+                                  sx,
+                                  sy,
                                   IDCT[y][x]);
             }
         }
@@ -506,6 +527,7 @@ JERR dec_decode_data_unit(pinfo dinfo, JIF_SCANNER * s,
 
 JERR dec_decode_MCU(pinfo dinfo, JIF_SCANNER * s){
     JERR e = JERR_NONE;
+    
     for ( int j = 0; j < dinfo->scan.Ns; j++){
         JIF_SCAN_COMPONENT sp = dinfo->scan.comps[j];
         JIF_FRAME_COMPONENT * cp = frame_comp(dinfo, sp.Cs);
@@ -514,8 +536,8 @@ JERR dec_decode_MCU(pinfo dinfo, JIF_SCANNER * s){
         
         int du_x, du_y; /* data unit (not sample) x, y within component */
         int mcu_per_line = ic->X / data_unit_width(dinfo) / cp->H ; /* number of MCU | data block in a row */
-        int mcu_x = dinfo->m % mcu_per_line;
-        int mcu_y = dinfo->m / mcu_per_line;
+        int mcu_x = dinfo->scan.m % mcu_per_line;
+        int mcu_y = dinfo->scan.m / mcu_per_line;
         
         /* do a data block, H x V data units */
         for (int h = 0; h < cp->H; h++){
@@ -523,6 +545,7 @@ JERR dec_decode_MCU(pinfo dinfo, JIF_SCANNER * s){
                 
                 du_x = mcu_x * cp->H + h;    /* data unit count x */
                 du_y = mcu_y * cp->V + v;
+                
                 e = dec_decode_data_unit(dinfo, s, j, du_x, du_y);  //TODO: unknown SIGABRT when choose a file from UI: (decoder shoud not be put in UI thread ?)
                 if (JERR_NONE != e){
                     return e;
@@ -541,7 +564,7 @@ JERR dec_decode_ECS(pinfo dinfo, JIF_SCANNER * s){
         if (JERR_NONE != e){
             return e;
         }
-        ++dinfo->m;
+        ++dinfo->scan.m;
     }
 }
 
@@ -554,7 +577,7 @@ JERR dec_decode_restart_interval(pinfo dinfo, JIF_SCANNER * s){
         }
     }
     
-    for(int i=0; i < dinfo->Ri; i++ ){
+    for(int i=0; i < dinfo->scan.Ri; i++ ){
         e = dec_decode_ECS(dinfo, s);
         if (JERR_NONE != e){
             return e;
@@ -564,7 +587,6 @@ JERR dec_decode_restart_interval(pinfo dinfo, JIF_SCANNER * s){
     return JERR_NONE;
 }
 
-/* note : a scan may enable restart interval Ri */
 JERR dec_decode_scan(pinfo dinfo, JIF_SCANNER * s){
     JERR e = JERR_NONE;
     
@@ -572,30 +594,83 @@ JERR dec_decode_scan(pinfo dinfo, JIF_SCANNER * s){
         return JERR_BAD_SCAN_HEADER;
     }
     
+    /* calculate for decoding
+     =========================*/
+    
+    /* data unit X, Y
+     (set at reading frame header) */
+    
     JIF_SCAN_COMPONENT * sc;
     JIF_FRAME_COMPONENT * fc;
-    dinfo->Nb = 0;
+    JIMG_COMPONENT * ic;
+    
+    dinfo->scan.Nb = 0;
+    dinfo->scan.X_MCU = 0;
     for(int j = 0; j < dinfo->scan.Ns; j++){
-        dinfo->scan.comps[j].PRED = 0;
         
         sc = &dinfo->scan.comps[j];
         fc = frame_comp(dinfo, sc->Cs);
-        dinfo->Nb += fc->H * fc->V;
+        
+        dinfo->scan.Nb += fc->H * fc->V;
+        
+        /* row # MCU = ceiling( max component width / MCU width (in sample) ) */
+        /* This is the tricky part: the image is defined by component,
+         OR the image is devided into component,
+         OR the image is ralated to its components with each sampling factors.
+         ARE the same meaning.
+         (So, all component is covered with same number of MCU in row / coloumn.)
+         Image size := largest component, X, Y may from different component.
+         
+         
+         A scan contains a _complete_ encoding of one or more image components.
+         
+         But frame Y may not known at 1st scan, in this case, DNL is expected
+         after 1st scan, while some component is completed in 1st scan. We expand
+         img.component height every time new line is needed, and expect
+         update_img() to resize and drop unneeded lines after height is defined
+         from DNL.
+         
+         In either case, we decode MCU and depend on low level nextbit() to raise
+         error on marker DNL, and we test RST marker after every scan->Ri MCU.
+         
+         If marker is not DNL nor RST, then it might be EOI, return for
+         upper level to test (because this function is decode_a_scan() ).
+         
+         During the fist scan , if frame.Y is unknown, jimg_set_component before
+         writing new sample point.
+         */
+        
+        if( !dinfo->scan.X_MCU ){  /* only needed to calculate once in a scan */
+            ic = jimg_get_component(dinfo->img, sc->Cs);
+            dinfo->scan.X_MCU = ic->X / dinfo->frame.data_unit_X / fc->H;
+        }
+        
+        if( dinfo->frame.Y ){
+            
+        }
+        
+        /* prepare for decoding DC */
+        dinfo->scan.comps[j].PRED = 0;
     }
-    if( dinfo->scan.Ns > 1 && dinfo->Nb > 10) {
+    
+    if( dinfo->scan.Ns > 1 && dinfo->scan.Nb > 10) {
         err("In scan Sum ( H * V ) should < 10\n");
         return JERR_BAD_SCAN_HEADER;
     }
     
+    if (!dinfo->scan.X_MCU){
+        return JERR_MISSING_MCU_COUNT_IN_ROW;
+    }
+    
+    /* number of restart interval */
+    
+    /* do decoding
+     =========================== */
     s->bit_cnt = 0;
     
-    dinfo->m = 0;
+    dinfo->scan.m = 0;
     
-    if ( dinfo->Ri > 0 ){/* restart marker is enabled */
-        /* How many ECS are there in this scan ?
-         * B.2.1 : If restart is enabled, the number of entropy-coded segments (MCU x n)
-         * is defined by the size of the image and the defined restart interval
-         */
+    if ( dinfo->scan.Ri > 0 ){/* restart marker is enabled */
         while(true){
             e = dec_decode_restart_interval(dinfo, s);
             
@@ -617,7 +692,7 @@ JERR dec_decode_scan(pinfo dinfo, JIF_SCANNER * s){
 
 /* decode multiple scan of a SOF */
 unsigned int dec_decode_multi_scan(pinfo dinfo, JIF_SCANNER * s){
-    unsigned int scan_count = 0;
+    dinfo->frame.scan_count = 0;
     JERR e = JERR_NONE;
     while(dec_read_tables_misc(dinfo, s) && M_SOS == jif_current_marker(s)) {
         
@@ -625,7 +700,7 @@ unsigned int dec_decode_multi_scan(pinfo dinfo, JIF_SCANNER * s){
         
         switch (e) { /* error handling */
             case JERR_NONE:
-                ++scan_count;
+                ++dinfo->frame.scan_count;
                 break;
             case JERR_HUFF_NEXTBIT_DNL:
                 /* handle DNL
@@ -643,21 +718,19 @@ unsigned int dec_decode_multi_scan(pinfo dinfo, JIF_SCANNER * s){
                 if (M_EOI == jif_current_byte(s)){
                     /* EOI or more scan (after 1st scan) */
                     e = JERR_NONE;
-                    return ++scan_count;
+                    return ++dinfo->frame.scan_count;
                 }
                 break;
         }
     }
     
-    return scan_count;
+    return dinfo->frame.scan_count;
 }
 
-/* TODO: now only support 1 baseline image */
 unsigned int dec_decode_multiple_image(pinfo dinfo, JIF_SCANNER * s){
     unsigned int img_counter = 0;
-    /*  TODO: now only support baseline DCT image. */
     while( jif_scan_next_maker_of(M_SOI, s) ){
-        dinfo->Ri = 0;  /* SOI disable restart interval. */
+        dinfo->scan.Ri = 0;  /* SOI disable restart interval. */
         
         /* read tables | misc. */
         if (!dec_read_tables_misc(dinfo, s)){
@@ -668,21 +741,20 @@ unsigned int dec_decode_multiple_image(pinfo dinfo, JIF_SCANNER * s){
         /* read markers before SOS marked scans */
         switch (jif_current_marker(s)) {
             case M_EOI:
-                dinfo->f_mode = JIF_FRAME_MODE_ABBR_TABLE;
+                dinfo->frame.mode = JIF_FRAME_MODE_ABBR_TABLE;
                 err("> Do not support mode_abbr_table yet." );
                 break;
             case M_DHP:
-                dinfo->f_mode = JIF_FRAME_MODE_HIERARCHICAL;
+                dinfo->frame.mode = JIF_FRAME_MODE_HIERARCHICAL;
                 err("> Do not support mode_hierarchical yet." );
                 break;
-            case M_SOF0:
-            case M_SOF1:
-            case M_SOF2:
-            case M_SOF3:
-            case M_SOF9:
-            case M_SOF10:
-            case M_SOF11:
-                dinfo->f_mode = JIF_FRAME_MODE_NONE_HIERARCHICAL;
+            case M_SOF0:    /* base line DCT */
+                dinfo->frame.data_unit_X = 8;
+                dinfo->frame.data_unit_Y = 8;
+                
+                dinfo->is_dct_based = true;
+                dinfo->is_use_arithmetic_coding = false;    /* huffman */
+                
                 if(!dec_read_sof(dinfo, s))     /* frame.Y may not present */
                     break;
                 
@@ -692,6 +764,14 @@ unsigned int dec_decode_multiple_image(pinfo dinfo, JIF_SCANNER * s){
                 if( 1 <= dec_decode_multi_scan(dinfo, s)){
                     img_counter ++;
                 }
+                break;
+            case M_SOF1:
+            case M_SOF2:
+            case M_SOF3:
+            case M_SOF9:
+            case M_SOF10:
+            case M_SOF11:
+                /*  TODO: now only support baseline DCT image. */
                 break;
             default:
                 break;

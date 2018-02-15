@@ -27,7 +27,8 @@ typedef uint16_t    JIMG_SAMPLE;        /* enough to save 8 or 12 bit precision 
 typedef struct {
     uint8_t     cid;            /* a unique label to the ith component */
     uint16_t    X;        
-    uint16_t    Y;        
+    uint16_t    Y;
+    uint16_t    ytmp;      /* in case Y is not defined */
     JIMG_SAMPLE *data;    /* the decoded image data */
 } JIMG_COMPONENT;
 
@@ -62,6 +63,8 @@ typedef struct {
 JIMG * jimg_new(uint16_t width, uint16_t height, uint16_t precision);
 JIMG_COMPONENT * jimg_set_component(JIMG * img, uint8_t comp_id, uint16_t width, uint16_t height);
 JIMG_COMPONENT * jimg_get_component(JIMG * img, uint8_t comp_id);
+
+/* returns 0 : dropped, else : wrote. */
 JIMG * jimg_write_sample(JIMG * img, uint8_t comp_i, uint16_t x, uint16_t y, double s);
 
 /* free */

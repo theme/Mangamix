@@ -61,6 +61,21 @@ JIF_MARKER jif_prob_next_marker(JIF_SCANNER * s){
     return 0x00;
 }
 
+JIF_MARKER jif_prob_next_marker_between(JIF_MARKER e_marker_a, JIF_MARKER e_marker_b, JIF_SCANNER * s ){
+    
+    byte * p = s->pjif, m, m2;    /* helper for shorter code */
+    jif_offset i = s->b;
+    for(; i < (s->size -8); i += 8) {
+        m = p[i/8];
+        m2 = p[(i/8)+1];
+        if( ( m == 0xFF) && jif_is_marker_byte(m2) ) {   /* find a marker */
+            if ( e_marker_a <= m2 && m2 <= e_marker_b )
+                return m2;
+        }
+    }
+    return 0x00;
+}
+
 JIF_MARKER jif_current_marker(JIF_SCANNER * s){
     return s->pjif[s->m];
 }
@@ -86,7 +101,7 @@ byte jif_next_byte(JIF_SCANNER * s){
 
 byte jif_scan_next_byte(JIF_SCANNER * s){
     s->b += 8;
-    s->B = s->b / 8;    // TODO: debug
+    s->B = s->b / 8;
     return s->pjif[s->b / 8];
 }
 

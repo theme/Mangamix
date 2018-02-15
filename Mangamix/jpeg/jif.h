@@ -108,14 +108,16 @@ typedef enum {
     JIF_FRAME_MODE_NONE_HIERARCHICAL
 } JIF_FRAME_MODE;
 
+typedef uint16_t width_t;
+
 typedef struct  {
     unsigned int C:8;     /* Component identifier */
     unsigned int H:4;     /* 1 ~ 4, Horizontal sampling factor: (component horizontal dimension) / X */
     unsigned int V:4;     /* 1 ~ 4, Vertical sampling factor: (component vertical dimension) / Y */
     unsigned int Tq:8;    /* Quantization table destination selector */
+    
 } JIF_FRAME_COMPONENT;    /* pointer to array of SOF_COMP */
 
-typedef uint16_t width_t;
 
 typedef struct {
     unsigned int Lf;            /* Frame header length */
@@ -124,7 +126,10 @@ typedef struct {
     width_t X;  /* max Number of samples per line (known after scan read header) */
     unsigned int Nf;    /* Number of image components in this frame ( 1 ~ 255 ) */
     JIF_FRAME_COMPONENT * comps;    /* ( in this frame ) */
-    JIF_FRAME_MODE mode;
+    JIF_FRAME_MODE mode;         /* got from tables/misc. segments after SOI */
+    unsigned int    data_unit_X;    /* of samples in data unit */
+    unsigned int    data_unit_Y;
+    unsigned int    scan_count;
 } JIF_FRAME;
 
 /* Scan */
@@ -143,6 +148,12 @@ typedef struct {
     unsigned int Ah:4;      /* Successive approximation bit position high */
     unsigned int Al:4;      /* Successive approximation bit position low or point transform */
     JIF_SCAN_COMPONENT * comps;
+    uint16_t            Ri;         /* restart interval */
+    uint32_t            m;          /* in scan MCU counter */
+    uint16_t            Nb;         /* # of data units in MCU
+                                     (calculated from frame and scan) */
+    uint16_t     X_MCU;
+    uint16_t     Y_MCU;
 } JIF_SCAN;
 
 typedef struct jif_scanner {
@@ -165,6 +176,8 @@ bool jif_is_marker_byte(byte b);
 
 bool jif_scan_next_marker(JIF_SCANNER * );
 JIF_MARKER jif_prob_next_marker(JIF_SCANNER * s);   /* return marker or 0x00 */
+JIF_MARKER jif_prob_next_marker_between(JIF_MARKER e_marker_a, JIF_MARKER e_marker_b, JIF_SCANNER * s );
+
 JIF_MARKER jif_current_marker(JIF_SCANNER * s);
 bool jif_scan_next_maker_of(JIF_MARKER e_marker, JIF_SCANNER * s );
 

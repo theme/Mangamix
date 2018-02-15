@@ -30,9 +30,7 @@ JIMG * jimg_new(uint16_t width, uint16_t height, uint16_t precision){
 JIMG_COMPONENT * jimg_set_component(JIMG * img, uint8_t comp_id, uint16_t width, uint16_t height){
     JIMG_COMPONENT * c = 0;
     int i;
-    
-    height = height == 0 ? 1 : height;  /* frame.Y may be known after 1st scan */
-    
+
     for( i = 0; i < img->comps_count; i++){
         c = &img->comps[i];
         if (c->cid == comp_id){

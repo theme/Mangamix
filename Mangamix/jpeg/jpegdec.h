@@ -94,10 +94,10 @@ typedef enum {
     JERR_MALLOC = -1,  /* not enough memory */
     JERR_UNKNOWN = -2,
     JERR_HUFF_NEXTBIT_DNL = -3,
-    JERR_BAD_SCAN_HEADER = -4
+    JERR_BAD_SCAN_HEADER = -4,
+    JERR_MISSING_MCU_COUNT_IN_ROW = -5,
+    JERR_SET_COMPONENT = -6
 } JERR;
-
-
 
  /********************************************************
   Entropy coding routine
@@ -171,15 +171,10 @@ typedef struct J_DEC_INFO {
     JTBL_HUFF           *tH[2][JTBL_NUM];   /* two class */
     
     /* (per frame) frame and component */
-    JIF_FRAME_MODE      f_mode;     /* got from tables/misc. segments after SOI */
     JIF_FRAME           frame;
     
     /* (per scan)  */
     JIF_SCAN            scan;
-    uint16_t            Ri;         /* restart interval */
-    uint16_t            m;          /* in scan MCU counter */
-    uint16_t            Nb;         /* # of data units in MCU
-                                     (calculated from frame and scan) */
     
     /* (for decoder) other info */
     JERR           err;
