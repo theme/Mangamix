@@ -508,7 +508,7 @@ JERR dec_decode_data_unit(pinfo dinfo, JIF_SCANNER * s,
                      jimg_set_component before writing new sample point.
                      */
                     if(!jimg_set_component(dinfo->img,
-                                           sj,
+                                           sp->Cs,
                                            dinfo->img->X,
                                            sy + 1)){
                         // bug: resize lose data. TODO: use scanline array in jimg comp
