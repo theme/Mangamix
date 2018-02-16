@@ -15,16 +15,6 @@
 
 #include "jimg.h"
 
-void free_component(JIMG_COMPONENT * c){
-    if(!c)
-        return;
-    for(int j = 0 ; j < c->Y; j++){
-        free(c->lines[j]);
-    }
-    free(c->lines);
-    free(c);
-}
-
 JIMG * jimg_new(uint16_t width, uint16_t height, uint16_t precision){
     JIMG * img;
     if( (img = malloc(sizeof(JIMG)))){
@@ -51,7 +41,8 @@ JIMG_COMPONENT * jimg_set_component(JIMG * img, uint8_t comp_id, uint16_t width,
     }
     
     if ( i == img->comps_count ){   /* no such component yet */
-        img->comps = realloc(img->comps, (img->comps_count + 1) * sizeof(JIMG_COMPONENT));
+        img->comps = realloc(img->comps,
+                             (img->comps_count + 1) * sizeof(JIMG_COMPONENT));
         if(img->comps){
             c = &img->comps[img->comps_count];
             c->lines = malloc(0);
@@ -135,12 +126,18 @@ JIMG * jimg_write_sample(JIMG * img, uint8_t comp_id, uint16_t x, uint16_t y, do
 }
 
 void jimg_free(JIMG * img){
-    if(!img)
-        return;
-    for( int i = 0 ; i < img->comps_count; i++){
-        free_component(&img->comps[i]);
+    if(img) {
+        for( int i = 0 ; i < img->comps_count; i++){
+            JIMG_COMPONENT * c = &img->comps[i];
+            if(c) {
+                for(int j = 0 ; j < c->Y; j++){
+                    free(c->lines[j]);
+                }
+                free(c->lines);
+            }
+        }
+        free(img);
     }
-    free(img);
 }
 
 JBMP_INFO * jbmp_new(void){

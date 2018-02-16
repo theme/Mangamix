@@ -46,7 +46,7 @@
             CGColorSpaceRelease(space);
         }
     }
-    j_dec_destroy(dinfo);
+    j_dec_free(dinfo);
     return ir;
 }
 

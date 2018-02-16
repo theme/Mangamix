@@ -52,7 +52,7 @@ bool dec_read_a_tbl_misc(pinfo dinfo, JIF_SCANNER *s){
                 uint8_t Pq = ( b & 0xF0 )  >> 4 ;
                 uint8_t Tq = b & 0x0F;
                 
-                printf("define quantization table @%llu Precision %u, No. %u\n", jif_get_offset(s), Pq == 0 ? 8 : 16, Tq);
+                printf(" > define quantization table @%llu Precision %u, No. %u\n", jif_get_offset(s), Pq == 0 ? 8 : 16, Tq);
                 
                 dinfo->tQ[Tq].precison = ( 0 == Pq ) ? 8 : 16;
                 
@@ -78,7 +78,7 @@ bool dec_read_a_tbl_misc(pinfo dinfo, JIF_SCANNER *s){
                 uint8_t Tc = ( b & 0xF0 )  >> 4 ;       /* table class 0: DC, 1: AC */
                 uint8_t Th = b & 0x0F;
                 
-                printf("define Huffman table @%llu Type %u, No. %u\n", jif_get_offset(s), Tc, Th);
+                printf(" > define Huffman table @%llu Type %u, No. %u\n", jif_get_offset(s), Tc, Th);
                 
                 JTBL_HUFF * th = dinfo->tH[Tc][Th];
                 memset(th, 0, sizeof(JTBL_HUFF));
@@ -170,7 +170,7 @@ bool dec_read_a_tbl_misc(pinfo dinfo, JIF_SCANNER *s){
             while(offset < Lp){
                 jif_scan_next_byte(s); offset++;
             }
-            printf("> skipped to offset @%llu\n", jif_get_offset(s));
+            printf(" > skipped to offset @%llu\n", jif_get_offset(s));
         }
             break;
         default:
@@ -213,6 +213,9 @@ bool dec_read_sof(pinfo dinfo, JIF_SCANNER * s){
             dinfo->frame.Y = jif_scan_2_bytes(s);
             dinfo->frame.X = jif_scan_2_bytes(s);
             dinfo->frame.Nf = jif_scan_next_byte(s);
+            
+            printf(" > %d x %d, %d components.\n", dinfo->frame.X, dinfo->frame.Y, dinfo->frame.Nf);
+            
             dinfo->frame.comps = realloc(dinfo->frame.comps, dinfo->frame.Nf * sizeof(JIF_FRAME_COMPONENT));
             
             byte b, H, V;
@@ -802,9 +805,11 @@ JERR j_info_get_error(pinfo dinfo){
     return dinfo->err;
 }
 
-void j_dec_destroy(pinfo dinfo){
-    jimg_free(dinfo->img);
-    free(dinfo->frame.comps);
-    free(dinfo->scan.comps);
-    free(dinfo);
+void j_dec_free(pinfo dinfo){
+    if(dinfo){
+        jimg_free(dinfo->img);
+        free(dinfo->frame.comps);
+        free(dinfo->scan.comps);
+        free(dinfo);
+    }
 }

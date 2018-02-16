@@ -191,6 +191,6 @@ unsigned int j_info_get_components(pinfo dinfo);
 bool j_dec_decode(pinfo dinfo);
 
 JERR j_info_get_error(pinfo dinfo);
-void j_dec_destroy(pinfo dinfo);
+void j_dec_free(pinfo dinfo);
 
 #endif /* jpegdec_h */
