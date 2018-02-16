@@ -16,6 +16,8 @@
 #include "jimg.h"
 
 void free_component(JIMG_COMPONENT * c){
+    if(!c)
+        return;
     for(int j = 0 ; j < c->Y; j++){
         free(c->lines[j]);
     }
@@ -133,28 +135,26 @@ JIMG * jimg_write_sample(JIMG * img, uint8_t comp_id, uint16_t x, uint16_t y, do
 }
 
 void jimg_free(JIMG * img){
+    if(!img)
+        return;
     for( int i = 0 ; i < img->comps_count; i++){
         free_component(&img->comps[i]);
     }
     free(img);
 }
 
-JBMP * jbmp_new(void){
-    JBMP * bmp;
-    if( (bmp = malloc(sizeof(JBMP)))){
-        bmp->data = malloc(0);
-        bmp->data_size = 0;
-    }
-    return bmp;
+JBMP_INFO * jbmp_new(void){
+    return malloc(sizeof(JBMP_INFO));
 }
 
-void jbmp_make_RGB24(JIMG * img, JBMP * bmp){
+void jbmp_make_RGBA32(JIMG * img, void * dst){
+    JBMP_INFO * bmp = jbmp_new();
     bmp->width = img->X;
     bmp->height = img->Y;
-    bmp->bits_per_pixel = 24;
+    bmp->bits_per_pixel = 32;
     bmp->bits_per_component = 8;
-    bmp->data_size = 3 * img->X * img->Y;
-    bmp->data = realloc(bmp->data, bmp->data_size);
+    bmp->bytes_per_row = img->X * 4;
+    byte * data = (byte *)dst;
     
     int c = img->comps_count;
     
@@ -167,31 +167,31 @@ void jbmp_make_RGB24(JIMG * img, JBMP * bmp){
                 bi = j * bmp->width + i;
                 cy = j * cp->Y /  bmp->height;
                 cx = i * cp->X / bmp->width;
-                bmp->data[bi] = cp->lines[cy][cx];     /* R */
-                bmp->data[bi+1] = cp->lines[cy][cx];   /* G */
-                bmp->data[bi+2] = cp->lines[cy][cx];   /* B */
+//                data[bi] = cp->lines[cy][cx];     /* R */
+//                data[bi+1] = cp->lines[cy][cx];   /* G */
+//                data[bi+2] = cp->lines[cy][cx];   /* B */
+                data[bi] = 0xFF;
+                data[bi+1] = 0x00;   /* G */
+                data[bi+2] = 0x00;   /* B */
+                data[bi+3] = 0x00;   /* A */
             }
         }
     } else if ( 3 == c ) {
         for (int j = 0 ; j < bmp->height; j++) {
             for( int i=0; i < bmp->width; i++ ){
+                bi = j * bmp->width + i;
                 for ( int k = 0; k < c; k++ ){     /* R, G, B */
                     cp = &img->comps[k];
-                    bi = j * bmp->width + i;
                     cy = j * cp->Y / bmp->height;
                     cx = i * cp->X / bmp->width;
-                    bmp->data[bi + k] = cp->lines[cy][cx];
+//                    data[bi + k] = cp->lines[cy][cx];
+                    if(k==0)
+                    data[bi + k] = 0xFF;
+                    data[bi + k] = 0x00;
                 }
+                data[bi + 3] = 0x00;   /* A */
             }
         }
     }
 }
 
-void jbmp_release(void *info, const void *data, size_t size){
-    jbmp_free((JBMP *)data);
-}
-
-void jbmp_free(JBMP * bmp){
-    free(bmp->data);
-    free(bmp);
-}

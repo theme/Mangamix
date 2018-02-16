@@ -160,7 +160,6 @@ typedef struct J_DEC_INFO {
     
     /* (per file) output: image data */
     JIMG                *img;
-    JBMP         *bmp;
     
     /* (per decoder) coding etc. */
     bool                is_dct_based;

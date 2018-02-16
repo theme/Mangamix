@@ -10,6 +10,6 @@
 
 void jquant_dequant(JTBL_QUANT * tQ, coeff_t * ZZ){
     for( int i = 0; i < DCTSIZE; i++){
-        ZZ[i] *= tQ->coeff_a[i];
+        ZZ[i] *= tQ->Q[i];
     }
 }

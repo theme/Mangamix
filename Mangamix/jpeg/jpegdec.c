@@ -11,7 +11,6 @@
 pinfo j_dec_new(void) {
     pinfo p = (pinfo) calloc(1, sizeof(struct J_DEC_INFO));
     p->img = 0;
-    p->bmp = jbmp_new();
     p->frame.comps = malloc(0);  /* so that dec_read_sof() can freely realloc memory on it, and free. */
     p->scan.comps = malloc(0);
     
@@ -57,10 +56,10 @@ bool dec_read_a_tbl_misc(pinfo dinfo, JIF_SCANNER *s){
                 for (int i = 0 ; i < 64 ; i++){
                     if ( 0 == Pq ){
                         uint8_t c = jif_scan_next_byte(s); offset++;
-                        dinfo->tQ[Tq].coeff_a[i] = c;
+                        dinfo->tQ[Tq].Q[i] = c;
                     } else /* 1 == Pq */ {
                         uint16_t c = jif_scan_2_bytes(s); offset += 2;
-                        dinfo->tQ[Tq].coeff_a[i] = c;
+                        dinfo->tQ[Tq].Q[i] = c;
                     }
                 }
             }
@@ -443,6 +442,7 @@ JERR dec_decode_data_unit(pinfo dinfo, JIF_SCANNER * s,
         
         diff = jhuff_extend(diff, t);
         ZZ[0] = sp->PRED + diff;
+        sp->PRED = ZZ[0];
         
         /* decode AC coeff, using AC table specified in scan header. */
 //        for( int i = 1; i < DCTSIZE; i++){
@@ -487,7 +487,7 @@ JERR dec_decode_data_unit(pinfo dinfo, JIF_SCANNER * s,
         double IDCT[DCTWIDTH][DCTWIDTH] = {0};
         j_idct_ZZ(IDCT, ZZ);
         
-        j_ZZ_dbg(ZZ);
+//        j_ZZ_dbg(ZZ);
         
         /* level shift after IDCT */
         uint16_t y, x;
@@ -518,7 +518,8 @@ JERR dec_decode_data_unit(pinfo dinfo, JIF_SCANNER * s,
                 jimg_write_sample(dinfo->img, sp->Cs,
                                   sx,
                                   sy,
-                                  IDCT[y][x]);
+//                                  IDCT[y][x]);
+                                  0xFF);
             }
         }
     }
@@ -526,8 +527,7 @@ JERR dec_decode_data_unit(pinfo dinfo, JIF_SCANNER * s,
     return JERR_NONE;
 }
 
-/* comp > block (H x V in MCU) > unit > sample */
-
+/* comp > block (H x V in MCU) > data unit > sample */
 JERR dec_decode_MCU(pinfo dinfo, JIF_SCANNER * s){
     JERR e = JERR_NONE;
     
@@ -535,21 +535,15 @@ JERR dec_decode_MCU(pinfo dinfo, JIF_SCANNER * s){
         JIF_SCAN_COMPONENT sp = dinfo->scan.comps[j];
         JIF_FRAME_COMPONENT * cp = frame_comp(dinfo, sp.Cs);
         
-        JIMG_COMPONENT * ic = jimg_get_component(dinfo->img, sp.Cs);
-        
         int du_x, du_y; /* data unit (not sample) x, y within component */
-        int mcu_per_line = ic->X / data_unit_width(dinfo) / cp->H ; /* number of MCU | data block in a row */
-        int mcu_x = dinfo->scan.m % mcu_per_line;
-        int mcu_y = dinfo->scan.m / mcu_per_line;
         
-        /* do a data block, H x V data units */
         for (int h = 0; h < cp->H; h++){
             for (int v = 0; v < cp->V; v++){
                 
-                du_x = mcu_x * cp->H + h;    /* data unit count x */
-                du_y = mcu_y * cp->V + v;
+                du_x = (dinfo->scan.m % dinfo->scan.X_MCU) * cp->H + h;    /* data unit x */
+                du_y = (dinfo->scan.m / dinfo->scan.X_MCU) * cp->V + v;
                 
-                e = dec_decode_data_unit(dinfo, s, j, du_x, du_y);  //TODO: unknown SIGABRT when choose a file from UI: (decoder shoud not be put in UI thread ?)
+                e = dec_decode_data_unit(dinfo, s, j, du_x, du_y);
                 if (JERR_NONE != e){
                     return e;
                 }
@@ -807,7 +801,6 @@ JERR j_info_get_error(pinfo dinfo){
 
 void j_dec_destroy(pinfo dinfo){
     jimg_free(dinfo->img);
-    jbmp_free(dinfo->bmp);
     free(dinfo->frame.comps);
     free(dinfo->scan.comps);
     free(dinfo);

@@ -18,24 +18,31 @@
     CGImageRef ir = NULL;
     
     if (j_dec_decode(dinfo)){
-        size_t width = j_info_img_width(dinfo);     /* in pixel for image */
-        size_t height = j_info_img_height(dinfo);
         
-        jbmp_make_RGB24(dinfo->img, dinfo->bmp);
+        int width = dinfo->img->X;     /* in pixel for image */
+        int height = dinfo->img->Y;
+        int bitsPerComponent = 8;
+        int bitsPerPixel = 32;
+        int bytesPerRow = 4 * width * dinfo->img->X;
+        int data_size = bytesPerRow * height;
         
-        size_t bitsPerComponent = 8;
-        size_t bitsPerPixel = 24;
-        size_t bytesPerRow = dinfo->bmp->width * bitsPerPixel;
-        CGColorSpaceRef space = CGColorSpaceCreateDeviceRGB();
-        CGBitmapInfo bitmapInfo = kCGBitmapByteOrder32Little | kCGImageAlphaNoneSkipLast;
-        CGDataProviderRef provider = CGDataProviderCreateWithData(dinfo, dinfo->bmp->data, dinfo->bmp->data_size, jbmp_release);
-        const CGFloat *decode = NULL;   /* do not map color */
-        bool shouldInterpolate = true;  /* Core Graphics should apply a pixel-smoothing algorithm to the image, when output device with higher resolution than data. */
-        CGColorRenderingIntent intent = kCGRenderingIntentAbsoluteColorimetric;
-        ir = CGImageCreate(width, height, bitsPerComponent, bitsPerPixel, bytesPerRow, space, bitmapInfo, provider, decode, shouldInterpolate, intent);
+        NSMutableData * bmpData = [NSMutableData dataWithLength:4*width*height];
+        void * data = [bmpData mutableBytes];
         
-        CGDataProviderRelease(provider);
-        CGColorSpaceRelease(space);
+        if (data) {
+            jbmp_make_RGBA32(dinfo->img, data);
+            
+            CGColorSpaceRef space = CGColorSpaceCreateDeviceRGB();
+            CGBitmapInfo bitmapInfo = kCGBitmapByteOrder32Little | kCGImageAlphaNoneSkipLast;
+            CGDataProviderRef provider = CGDataProviderCreateWithData(NULL,[bmpData bytes], data_size, NULL);
+            const CGFloat *decode = NULL;   /* do not map color */
+            bool shouldInterpolate = false;  /* Core Graphics should apply a pixel-smoothing algorithm to the image, when output device with higher resolution than data. */
+            CGColorRenderingIntent intent = kCGRenderingIntentAbsoluteColorimetric;
+            ir = CGImageCreate(width, height, bitsPerComponent, bitsPerPixel, bytesPerRow, space, bitmapInfo, provider, decode, shouldInterpolate, intent);
+            
+            CGDataProviderRelease(provider);
+            CGColorSpaceRelease(space);
+        }
     }
     j_dec_destroy(dinfo);
     return ir;

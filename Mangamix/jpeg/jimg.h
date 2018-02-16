@@ -53,9 +53,8 @@ typedef struct {
     JIMG_COLOR_SPACE   color_space;
     uint8_t     bits_per_pixel;
     uint8_t     bits_per_component;
-    byte        *data;
-    size_t      data_size;
-} JBMP;
+    uint16_t    bytes_per_row;
+} JBMP_INFO;
 
 /* construct */
 JIMG * jimg_new(uint16_t width, uint16_t height, uint16_t precision);
@@ -68,11 +67,7 @@ JIMG * jimg_write_sample(JIMG * img, uint8_t comp_i, uint16_t x, uint16_t y, dou
 /* free */
 void jimg_free(JIMG * img);
 
-/* generate bmp */
-JBMP * jbmp_new(void);
-void jbmp_make_RGB24(JIMG * img, JBMP * bmp);
-
-void jbmp_release(void *info, const void *data, size_t size);
-void jbmp_free(JBMP * bmp);
+/* write out bmp to *dst */
+void jbmp_make_RGBA32(JIMG * img, void * dst);
 
 #endif /* jimg_h */
