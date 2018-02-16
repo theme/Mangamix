@@ -18,11 +18,11 @@ const uint16_t ZZi64[64] =
     21, 34, 37, 47, 50, 56, 59, 61,
     35, 36, 48, 49, 57, 58, 62, 63};
 
-void j_idct_ZZ(double IDCT[DCTWIDTH][DCTWIDTH], coeff_t *ZZ){
+void j_idct_ZZ(coeff_t IDCT[DCTWIDTH][DCTWIDTH], coeff_t *ZZ){
     uint16_t y, x;
     uint16_t v, u;
     
-    double s, sum;
+    float s, sum;
     
     for (y=0; y<DCTWIDTH; y++) {
         for (x=0; x<DCTWIDTH; x++) {

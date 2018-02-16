@@ -18,7 +18,8 @@ void jhuff_set_val(JTBL_HUFF * fh, huffindex_t k, huffval_t v){
 }
 
 void generate_size_table(JTBL_HUFF * th){
-    uint16_t k = 0, i, j;
+    huffindex_t k = 0, j;
+    huffsize_t i;
     
     for( i = 1; i <= HUFFCAT; i++ ){
         for ( j = 1; j <= th->bits[i]; j++){
@@ -32,7 +33,9 @@ void generate_size_table(JTBL_HUFF * th){
 
 
 void generate_code_table(JTBL_HUFF * th){
-    uint16_t k = 0, code = 0, si = th->huffsize[0];
+    huffindex_t k = 0;
+    huffcode_t code = 0;
+    huffsize_t si = th->huffsize[0];
     
     while (true) {
         do {
@@ -57,7 +60,7 @@ void jhuff_gen_decode_tbls(JTBL_HUFF * th){
     generate_code_table(th);
     //    jhuff_gen_huffval(th);
     
-    for( int i = 1, j = 0; i <= HUFFCAT ; i++ ){
+    for( huffindex_t i = 1, j = 0; i <= HUFFCAT ; i++ ){
         if( 0 == th->bits[i] ){
             th->maxcode[i] = -1;
             continue;
@@ -95,16 +98,14 @@ JERR nextbit(JIF_SCANNER * s){
 }
 
 JERR jhuff_decode(JTBL_HUFF * th, JIF_SCANNER * s, huffval_t *t){
-    
-    int i = 1;
+    huffindex_t i = 1;
     
     JERR e = nextbit(s);
-    
     if ( JERR_NONE != e ){
         return e;
     }
     
-    huffval_t code = s->bit_nextbit;    /* huffval_t (uint8_t) <= byte (uint8_t) */
+    huffcode_t code = s->bit_nextbit;    /* huffval_t (uint8_t) <= byte (uint8_t) */
     
     while( code > th->maxcode[i] ){     /* uint8 > int16 ? */
         i++;

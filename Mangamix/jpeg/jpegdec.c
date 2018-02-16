@@ -437,24 +437,55 @@ JERR dec_decode_data_unit(pinfo dinfo, JIF_SCANNER * s,
                           unsigned int sj, unsigned int du_x, unsigned int du_y ){
     
     if ( dinfo->is_dct_based ){
+        /* Sample precision (in bits) is read from frame header.
+         *  8, 12 (DCT), 2~16(lossless).
+         *
+         * Here we only support baseline DCT which is 8 bit, that is ,
+         * the image component sample is 8 bit.
+         * the shifted sample is 8 bit (signed, 2's complement representation)
+         * as the input of DCT .
+         *
+         * There is thesis investigated and concluded that,
+         * within the context of JPEG  compression level  50,
+         * savings can be achieved by using 20 bit (summation),
+         * and 12 bit (multiplication) fixed point numbers for DCT.
+         *
+         * So during DCT float is used for sum and multiplication
+         * inside DCT subroutine, for coding here.
+         *
+         * The quantized DCT coeffecient is 8 ~ 12 bit signed.
+         * the huffman encoded -> decoded
+         * (signed, 2's complement representation)
+         * the dequantized value is 8 ~ 12 bit signed.
+         * the shifted value is 8 ~ 12 bit unsigned.
+         * ( should be shifted into 0 ~ 255 )
+         *
+         * So int16_t is used outside of DCT subroutine, which is enough to
+         * represent 8, 12 bit signed value. (coeff_t)
+         *
+         * Finally, shift and clampe IDCT output to sample precision.
+         * (0~255 for 8 bit, 0~ 4095 for 12 bit.)
+         *
+         */
         coeff_t ZZ[DCTSIZE] = {0};
         
         /* decode DC coeff, using DC table specified in scan header. */
         JIF_SCAN_COMPONENT * sp = &dinfo->scan.comps[sj];
-        huffval_t t;
         
-        JERR e = jhuff_decode(dinfo->tH[0][sp->Td], s, &t); /* DC use type 0 huffman table */
+        /* Huffman Value is 8 bit, meaning is determined by each Huffman coding model. */
+        byte t, v;
+        
+        /* DC table is type 0 */
+        JERR e = jhuff_decode(dinfo->tH[0][sp->Td], s, &t);
         if ( JERR_NONE != e){
             return e;
         }
-        
-        coeff_t diff;
-        e = jhuff_receive(t, s, (huffval_t*)&diff);
+        e = jhuff_receive(t, s, &v);
         if ( JERR_NONE != e){
             return e;
         }
-        
-        diff = jhuff_extend(diff, t);
+        coeff_t diff;   /* huff_val -> coeff_t */
+        diff = jhuff_extend(v, t);
         ZZ[0] = sp->PRED + diff;
         sp->PRED = ZZ[0];
         
@@ -484,11 +515,12 @@ JERR dec_decode_data_unit(pinfo dinfo, JIF_SCANNER * s,
             
             K += R;
             /* decode ZZ(K) */
-            e = jhuff_receive(SSSS, s, (huffval_t*)&ZZ[K]);
+            huffval_t v;
+            e = jhuff_receive(SSSS, s, &v);
             if ( JERR_NONE != e){
                 return e;
             }
-            ZZ[K] = jhuff_extend(ZZ[K], SSSS);
+            ZZ[K] = jhuff_extend(v, SSSS);  /* huff_val -> coeff_t */
         }
         
         /* dequantize using table destination specified in the frame header. */
@@ -498,7 +530,7 @@ JERR dec_decode_data_unit(pinfo dinfo, JIF_SCANNER * s,
         
         /* calculate 8 × 8 inverse DCT. */
         //A.3.3
-        double IDCT[DCTWIDTH][DCTWIDTH] = {0};
+        coeff_t IDCT[DCTWIDTH][DCTWIDTH] = {0};
         j_idct_ZZ(IDCT, ZZ);
         
 //        j_ZZ_dbg(ZZ);
