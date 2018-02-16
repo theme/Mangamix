@@ -47,12 +47,15 @@ bool dec_read_a_tbl_misc(pinfo dinfo, JIF_SCANNER *s){
         {   uint16_t Lq = jif_scan_2_bytes(s);
             uint16_t offset = 2;
 
-            byte b = jif_scan_next_byte(s); offset++;
-            uint8_t Pq = ( b & 0xF0 )  >> 4 ;
-            uint8_t Tq = b & 0x0F;
-
-            dinfo->tQ[Tq].precison = ( 0 == Pq ) ? 8 : 16;
             while (offset < Lq) {
+                byte b = jif_scan_next_byte(s); offset++;
+                uint8_t Pq = ( b & 0xF0 )  >> 4 ;
+                uint8_t Tq = b & 0x0F;
+                
+                printf("define quantization table @%llu Precision %u, No. %u\n", jif_get_offset(s), Pq == 0 ? 8 : 16, Tq);
+                
+                dinfo->tQ[Tq].precison = ( 0 == Pq ) ? 8 : 16;
+                
                 for (int i = 0 ; i < 64 ; i++){
                     if ( 0 == Pq ){
                         uint8_t c = jif_scan_next_byte(s); offset++;
