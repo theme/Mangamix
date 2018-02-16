@@ -22,7 +22,7 @@
 
 #define JMAX_COMPONENTS     256
 
-typedef uint16_t    JIMG_SAMPLE;        /* enough to save 8 or 12 bit precision integer */
+typedef uint8_t    JIMG_SAMPLE;        /* enough to save 8 or 12 bit precision integer */
 
 typedef struct {
     uint8_t     cid;       /* a unique label to the ith component */
@@ -62,7 +62,7 @@ JIMG_COMPONENT * jimg_set_component(JIMG * img, uint8_t comp_id, uint16_t width,
 JIMG_COMPONENT * jimg_get_component(JIMG * img, uint8_t comp_id);
 
 /* returns 0 : dropped, else : wrote. */
-JIMG * jimg_write_sample(JIMG * img, uint8_t comp_i, uint16_t x, uint16_t y, double s);
+JIMG * jimg_write_sample(JIMG * img, uint8_t comp_i, uint16_t x, uint16_t y, uint16_t s);
 
 /* free */
 void jimg_free(JIMG * img);

@@ -565,8 +565,7 @@ JERR dec_decode_data_unit(pinfo dinfo, JIF_SCANNER * s,
                                   sp->Cs,
                                   sx,
                                   sy,
-//                                  IDCT[y][x]);
-                                  0xFF);
+                                  IDCT[y][x]);
             }
         }
     }

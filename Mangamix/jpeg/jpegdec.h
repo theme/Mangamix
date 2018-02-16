@@ -105,10 +105,10 @@ typedef enum {
 
 /* Huffman table in JIF file */
 
-#define HUFFCAT    16   /* enought for DC 0 ~ 12, AC 1 ~ 10 category */
+#define HUFFCAT    16
 
 typedef uint16_t huffindex_t;   /* to contain 0 ~ cat * 256 value */
-typedef uint8_t huffval_t;      /* type that contains a huffman value */
+typedef byte    huffval_t;      /* type that contains a huffman value */
 typedef uint8_t huffsize_t;     /* type that contains a huffman code length in bit */
 typedef int16_t huffcode_t;    /* a huffman code (1 ~ 16 bit) */
 

@@ -102,8 +102,8 @@ JIMG_COMPONENT * jimg_get_component(JIMG * img, uint8_t comp_id){
     return 0;
 }
 
-JIMG * jimg_write_sample(JIMG * img, uint8_t comp_id, uint16_t x, uint16_t y, double s){
-    uint16_t smax = 1 << (img->precision - 1);
+JIMG * jimg_write_sample(JIMG * img, uint8_t comp_id, uint16_t x, uint16_t y, uint16_t s){
+    uint16_t smax = (1 << img->precision) - 1;
     if ( s < 0 ){
          s = 0;
     } else if ( s > smax){
@@ -185,7 +185,8 @@ void jbmp_make_RGBA32(JIMG * img, void * dst){
                     cp = &img->comps[k];
                     cy = j * cp->Y / bmp->height;
                     cx = i * cp->X / bmp->width;
-                    pixel += cp->lines[cy][cx] << (c - k);      /* R, G, B */
+                    pixel += cp->lines[cy][cx];      /* R, G, B */
+                    pixel <<= 8;
                 }
                 pixel += 0x00;  /* A */
                 data[bi] = pixel;
