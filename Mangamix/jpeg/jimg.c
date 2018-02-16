@@ -151,10 +151,11 @@ void jbmp_make_RGBA32(JIMG * img, void * dst){
     JBMP_INFO * bmp = jbmp_new();
     bmp->width = img->X;
     bmp->height = img->Y;
-    bmp->bits_per_pixel = 32;
     bmp->bits_per_component = 8;
-    bmp->bytes_per_row = img->X * 4;
-    byte * data = (byte *)dst;
+    bmp->bits_per_pixel = 32;
+    bmp->bytes_per_row = 4 * img->X;
+    uint32_t * data = (uint32_t *)dst;
+    uint32_t pixel;
     
     int c = img->comps_count;
     
@@ -163,33 +164,35 @@ void jbmp_make_RGBA32(JIMG * img, void * dst){
     if ( 1 == c ) {
         cp = &img->comps[0];
         for (int j = 0 ; j < bmp->height; j++) {
-            for( int i=0; i < bmp->width; i++ ){
+            for( int i = 0; i < bmp->width; i++ ){
                 bi = j * bmp->width + i;
                 cy = j * cp->Y /  bmp->height;
                 cx = i * cp->X / bmp->width;
-//                data[bi] = cp->lines[cy][cx];     /* R */
-//                data[bi+1] = cp->lines[cy][cx];   /* G */
-//                data[bi+2] = cp->lines[cy][cx];   /* B */
-                data[bi] = 0xFF;
-                data[bi+1] = 0x00;   /* G */
-                data[bi+2] = 0x00;   /* B */
-                data[bi+3] = 0xFF;   /* A */
+//                data[4*bi] = cp->lines[cy][cx];     /* R */
+//                data[4*bi+1] = cp->lines[cy][cx];   /* G */
+//                data[4*bi+2] = cp->lines[cy][cx];   /* B */
+                pixel = 0xFF;   /* R */
+                pixel <<= 8;
+                pixel += 0x00;  /* G */
+                pixel <<= 8;
+                pixel += 0x00;  /* B */
+                pixel <<= 8;
+                pixel += 0x00;  /* A */
+                data[bi]   = pixel;
             }
         }
     } else if ( 3 == c ) {
         for (int j = 0 ; j < bmp->height; j++) {
-            for( int i=0; i < bmp->width; i++ ){
+            for( int i=0 ; i < bmp->width; i++){
                 bi = j * bmp->width + i;
                 for ( int k = 0; k < c; k++ ){     /* R, G, B */
                     cp = &img->comps[k];
                     cy = j * cp->Y / bmp->height;
                     cx = i * cp->X / bmp->width;
-//                    data[bi + k] = cp->lines[cy][cx];
-                    if(k==0)
-                    data[bi + k] = 0xFF;
-                    data[bi + k] = 0x00;
+//                    data[4*dbi + k] = cp->lines[cy][cx];
+                    data[4*bi + k] = k == 0 ? 0xFF : 0x00;
                 }
-                data[bi + 3] = 0xFF;   /* A */
+                data[4*bi + 3] = 0x00;   /* A */
             }
         }
     }
