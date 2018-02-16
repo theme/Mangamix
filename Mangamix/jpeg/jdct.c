@@ -32,7 +32,10 @@ void j_idct_ZZ(coeff_t IDCT[DCTWIDTH][DCTWIDTH], coeff_t *ZZ){
                 for( v=0; v < DCTWIDTH; v++){
                     
                     s = 1.0;
-                    if ( 0 == u && 0 == v){
+                    if ( 0 == u ){
+                        s /= 2;
+                    }
+                    if ( 0 == v ){
                         s /= 2;
                     }
                     s *= ZZ[ZZi64[v*8 + u]];

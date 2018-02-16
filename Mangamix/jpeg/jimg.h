@@ -19,6 +19,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "jtypes.h"
+#include "jcolor.h"
 
 #define JMAX_COMPONENTS     256
 

@@ -23,6 +23,8 @@
 		A59E934F1FF3ED3C004A9F48 /* ImageIO.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A59E934D1FF3ED2F004A9F48 /* ImageIO.framework */; };
 		A5B8C0B220117109002A3E0D /* jif.c in Sources */ = {isa = PBXBuildFile; fileRef = A5B8C0B120117109002A3E0D /* jif.c */; };
 		A5B8C0B320117109002A3E0D /* jif.c in Sources */ = {isa = PBXBuildFile; fileRef = A5B8C0B120117109002A3E0D /* jif.c */; };
+		A5DC3EA420370629002971F4 /* jcolor.c in Sources */ = {isa = PBXBuildFile; fileRef = A5DC3EA320370629002971F4 /* jcolor.c */; };
+		A5DC3EA520370629002971F4 /* jcolor.c in Sources */ = {isa = PBXBuildFile; fileRef = A5DC3EA320370629002971F4 /* jcolor.c */; };
 		A5F71D1A1F83D11B00B045C9 /* AppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = A5F71D191F83D11B00B045C9 /* AppDelegate.m */; };
 		A5F71D1D1F83D11B00B045C9 /* ViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = A5F71D1C1F83D11B00B045C9 /* ViewController.m */; };
 		A5F71D1F1F83D11B00B045C9 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A5F71D1E1F83D11B00B045C9 /* Assets.xcassets */; };
@@ -67,6 +69,8 @@
 		A59E93481FEE5778004A9F48 /* JifDecoder.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = JifDecoder.m; sourceTree = "<group>"; };
 		A59E934D1FF3ED2F004A9F48 /* ImageIO.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = ImageIO.framework; path = System/Library/Frameworks/ImageIO.framework; sourceTree = SDKROOT; };
 		A5B8C0B120117109002A3E0D /* jif.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = jif.c; sourceTree = "<group>"; };
+		A5DC3EA220370629002971F4 /* jcolor.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = jcolor.h; sourceTree = "<group>"; };
+		A5DC3EA320370629002971F4 /* jcolor.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = jcolor.c; sourceTree = "<group>"; };
 		A5F71D151F83D11B00B045C9 /* Mangamix.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Mangamix.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A5F71D181F83D11B00B045C9 /* AppDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AppDelegate.h; sourceTree = "<group>"; };
 		A5F71D191F83D11B00B045C9 /* AppDelegate.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = AppDelegate.m; sourceTree = "<group>"; };
@@ -118,6 +122,8 @@
 			isa = PBXGroup;
 			children = (
 				A51603FF201BA9D700DCD761 /* jtypes.h */,
+				A5DC3EA220370629002971F4 /* jcolor.h */,
+				A5DC3EA320370629002971F4 /* jcolor.c */,
 				A591AEB4202E76C8009AC950 /* jdct.h */,
 				A591AEB5202E76C8009AC950 /* jdct.c */,
 				A557EABD2004065C00893FDC /* jif.h */,
@@ -355,6 +361,7 @@
 				A59E93491FEE5778004A9F48 /* JifDecoder.m in Sources */,
 				A51603F9201BA8EA00DCD761 /* jentropydec.c in Sources */,
 				A51603F5201AE00A00DCD761 /* jimg.c in Sources */,
+				A5DC3EA420370629002971F4 /* jcolor.c in Sources */,
 				A5F71D1A1F83D11B00B045C9 /* AppDelegate.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -371,6 +378,7 @@
 				A51603FA201BA8EA00DCD761 /* jentropydec.c in Sources */,
 				A5F71D301F83D11B00B045C9 /* MangamixTests.m in Sources */,
 				A5B8C0B320117109002A3E0D /* jif.c in Sources */,
+				A5DC3EA520370629002971F4 /* jcolor.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

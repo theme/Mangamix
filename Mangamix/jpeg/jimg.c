@@ -189,7 +189,7 @@ void jbmp_make_RGBA32(JIMG * img, void * dst){
                     pixel <<= 8;
                 }
                 pixel += 0x00;  /* A */
-                data[bi] = pixel;
+                data[bi] = jYCbCrA2RGBA(pixel);
             }
         }
     }
