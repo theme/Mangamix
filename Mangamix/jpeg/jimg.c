@@ -154,6 +154,7 @@ void jbmp_make_RGBA32(JIMG * img, void * dst){
     bmp->bits_per_component = 8;
     bmp->bits_per_pixel = 32;
     bmp->bytes_per_row = 4 * img->X;
+    
     uint32_t * data = (uint32_t *)dst;
     uint32_t pixel;
     
@@ -168,31 +169,29 @@ void jbmp_make_RGBA32(JIMG * img, void * dst){
                 bi = j * bmp->width + i;
                 cy = j * cp->Y /  bmp->height;
                 cx = i * cp->X / bmp->width;
-//                data[4*bi] = cp->lines[cy][cx];     /* R */
-//                data[4*bi+1] = cp->lines[cy][cx];   /* G */
-//                data[4*bi+2] = cp->lines[cy][cx];   /* B */
-                pixel = 0xFF;   /* R */
+                pixel = cp->lines[cy][cx];  /* R */
                 pixel <<= 8;
-                pixel += 0x00;  /* G */
+                pixel += cp->lines[cy][cx];  /* G */
                 pixel <<= 8;
-                pixel += 0x00;  /* B */
+                pixel += cp->lines[cy][cx];  /* B */
                 pixel <<= 8;
                 pixel += 0x00;  /* A */
-                data[bi]   = pixel;
+                data[bi] = pixel;
             }
         }
     } else if ( 3 == c ) {
         for (int j = 0 ; j < bmp->height; j++) {
             for( int i=0 ; i < bmp->width; i++){
                 bi = j * bmp->width + i;
-                for ( int k = 0; k < c; k++ ){     /* R, G, B */
+                pixel = 0;
+                for ( int k = 0; k < c; k++ ){
                     cp = &img->comps[k];
                     cy = j * cp->Y / bmp->height;
                     cx = i * cp->X / bmp->width;
-//                    data[4*dbi + k] = cp->lines[cy][cx];
-                    data[4*bi + k] = k == 0 ? 0xFF : 0x00;
+                    pixel += cp->lines[cy][cx] << (c - k);      /* R, G, B */
                 }
-                data[4*bi + 3] = 0x00;   /* A */
+                pixel += 0x00;  /* A */
+                data[bi] = pixel;
             }
         }
     }
