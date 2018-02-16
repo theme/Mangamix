@@ -23,15 +23,17 @@
         int height = dinfo->img->Y;
         int bitsPerComponent = 8;
         int bitsPerPixel = 32;
-        int bytesPerRow = 4 * width * dinfo->img->X;
+        int bytesPerRow = 4 * width;
         int data_size = bytesPerRow * height;
         
-        NSMutableData * bmpData = [NSMutableData dataWithLength:4*width*height];
+        NSMutableData * bmpData = [NSMutableData dataWithLength:data_size];
         void * data = [bmpData mutableBytes];
         
-        if (data) {
-            jbmp_make_RGBA32(dinfo->img, data);
-            
+        if ( bmpData.length > 0 && data) {
+//            jbmp_make_RGBA32(dinfo->img, data);
+            for (int i =0; i < data_size; i++){
+                ((uint32 *)data)[i/4] = 0xFF000000;
+            }
             CGColorSpaceRef space = CGColorSpaceCreateDeviceRGB();
             CGBitmapInfo bitmapInfo = kCGBitmapByteOrder32Little | kCGImageAlphaNoneSkipLast;
             CGDataProviderRef provider = CGDataProviderCreateWithData(NULL,[bmpData bytes], data_size, NULL);

@@ -173,7 +173,7 @@ void jbmp_make_RGBA32(JIMG * img, void * dst){
                 data[bi] = 0xFF;
                 data[bi+1] = 0x00;   /* G */
                 data[bi+2] = 0x00;   /* B */
-                data[bi+3] = 0x00;   /* A */
+                data[bi+3] = 0xFF;   /* A */
             }
         }
     } else if ( 3 == c ) {
@@ -189,7 +189,7 @@ void jbmp_make_RGBA32(JIMG * img, void * dst){
                     data[bi + k] = 0xFF;
                     data[bi + k] = 0x00;
                 }
-                data[bi + 3] = 0x00;   /* A */
+                data[bi + 3] = 0xFF;   /* A */
             }
         }
     }
