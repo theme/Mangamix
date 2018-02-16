@@ -38,7 +38,7 @@
             CGBitmapInfo bitmapInfo = kCGBitmapByteOrder32Little | kCGImageAlphaNoneSkipLast;
             CGDataProviderRef provider = CGDataProviderCreateWithData(NULL,[bmpData bytes], data_size, NULL);
             const CGFloat *decode = NULL;   /* do not map color */
-            bool shouldInterpolate = false;  /* Core Graphics should apply a pixel-smoothing algorithm to the image, when output device with higher resolution than data. */
+            bool shouldInterpolate = true;  /* Core Graphics should apply a pixel-smoothing algorithm to the image, when output device with higher resolution than data. */
             CGColorRenderingIntent intent = kCGRenderingIntentAbsoluteColorimetric;
             ir = CGImageCreate(width, height, bitsPerComponent, bitsPerPixel, bytesPerRow, space, bitmapInfo, provider, decode, shouldInterpolate, intent);
             

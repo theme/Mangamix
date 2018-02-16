@@ -200,42 +200,50 @@ bool dec_read_sof(pinfo dinfo, JIF_SCANNER * s){
     JIF_MARKER m = jif_current_marker(s);
     switch (m) {
         case M_SOF0:
+            dinfo->is_dct_based = true;
+            dinfo->frame.data_unit_X = 8;
+            dinfo->frame.data_unit_Y = 8;
+            
+            dinfo->is_use_arithmetic_coding = false;    /* huffman */
+            break;
         case M_SOF1:
         case M_SOF2:
         case M_SOF3:
         case M_SOF9:
         case M_SOF10:
         case M_SOF11:
+            /*  TODO: now only support baseline DCT image. */
             printf("%x @%llu SOF%d\n", m, jif_get_offset(s), m-M_SOF0);
-        {
-            dinfo->frame.Lf = jif_scan_2_bytes(s);
-            dinfo->frame.P = jif_scan_next_byte(s);    /* sample precision of components in frame */
-            dinfo->frame.Y = jif_scan_2_bytes(s);
-            dinfo->frame.X = jif_scan_2_bytes(s);
-            dinfo->frame.Nf = jif_scan_next_byte(s);
-            
-            printf(" > %d x %d, %d components.\n", dinfo->frame.X, dinfo->frame.Y, dinfo->frame.Nf);
-            
-            dinfo->frame.comps = realloc(dinfo->frame.comps, dinfo->frame.Nf * sizeof(JIF_FRAME_COMPONENT));
-            
-            byte b, H, V;
-            for(int i = 0; i < dinfo->frame.Nf; i++){
-                dinfo->frame.comps[i].C = jif_scan_next_byte(s);
-                b = jif_scan_next_byte(s);
-                H = b >> 4;
-                V = 0x0f & b;
-                dinfo->frame.comps[i].H = H;
-                dinfo->frame.comps[i].V = V;
-                dinfo->frame.comps[i].Tq = jif_scan_next_byte(s);
-            }
-            
-            return true;
-        }
+            return false;
+            break;
         default:
             printf("%x @%llu NOT M_SOFx\n", m, jif_get_offset(s));
+            return false;
             break;
     }
-    return false;
+    printf("%x @%llu SOF%d\n", m, jif_get_offset(s), m-M_SOF0);
+    dinfo->frame.Lf = jif_scan_2_bytes(s);
+    dinfo->frame.P = jif_scan_next_byte(s);    /* sample precision of components in frame */
+    dinfo->frame.Y = jif_scan_2_bytes(s);
+    dinfo->frame.X = jif_scan_2_bytes(s);
+    dinfo->frame.Nf = jif_scan_next_byte(s);
+    
+    printf(" > %d x %d, %d components.\n", dinfo->frame.X, dinfo->frame.Y, dinfo->frame.Nf);
+    
+    dinfo->frame.comps = realloc(dinfo->frame.comps, dinfo->frame.Nf * sizeof(JIF_FRAME_COMPONENT));
+    
+    byte b, H, V;
+    for(int i = 0; i < dinfo->frame.Nf; i++){
+        dinfo->frame.comps[i].C = jif_scan_next_byte(s);
+        b = jif_scan_next_byte(s);
+        H = b >> 4;
+        V = 0x0f & b;
+        dinfo->frame.comps[i].H = H;
+        dinfo->frame.comps[i].V = V;
+        dinfo->frame.comps[i].Tq = jif_scan_next_byte(s);
+    }
+    
+    return true;
 }
 
 bool dec_read_DNL(pinfo dinfo, JIF_SCANNER *s ){
@@ -521,7 +529,8 @@ JERR dec_decode_data_unit(pinfo dinfo, JIF_SCANNER * s,
                         return JERR_SET_COMPONENT;
                     }
                 }
-                jimg_write_sample(dinfo->img, sp->Cs,
+                jimg_write_sample(dinfo->img,
+                                  sp->Cs,
                                   sx,
                                   sy,
 //                                  IDCT[y][x]);
@@ -749,13 +758,13 @@ unsigned int dec_decode_multiple_image(pinfo dinfo, JIF_SCANNER * s){
                 dinfo->frame.mode = JIF_FRAME_MODE_HIERARCHICAL;
                 err("> Do not support mode_hierarchical yet." );
                 break;
-            case M_SOF0:    /* base line DCT */
-                dinfo->frame.data_unit_X = 8;
-                dinfo->frame.data_unit_Y = 8;
-                
-                dinfo->is_dct_based = true;
-                dinfo->is_use_arithmetic_coding = false;    /* huffman */
-                
+            case M_SOF0:
+            case M_SOF1:
+            case M_SOF2:
+            case M_SOF3:
+            case M_SOF9:
+            case M_SOF10:
+            case M_SOF11:
                 if(!dec_read_sof(dinfo, s))     /* frame.Y may not present */
                     break;
                 
@@ -765,14 +774,6 @@ unsigned int dec_decode_multiple_image(pinfo dinfo, JIF_SCANNER * s){
                 if( 1 <= dec_decode_multi_scan(dinfo, s)){
                     img_counter ++;
                 }
-                break;
-            case M_SOF1:
-            case M_SOF2:
-            case M_SOF3:
-            case M_SOF9:
-            case M_SOF10:
-            case M_SOF11:
-                /*  TODO: now only support baseline DCT image. */
                 break;
             default:
                 break;
