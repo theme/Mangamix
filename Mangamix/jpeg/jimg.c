@@ -166,12 +166,11 @@ void jbmp_make_RGBA32(JIMG * img, void * dst){
                 bi = j * bmp->width + i;
                 cy = j * cp->Y /  bmp->height;
                 cx = i * cp->X / bmp->width;
-                pixel = cp->lines[cy][cx];  /* R */
-                pixel <<= 8;
-                pixel += cp->lines[cy][cx];  /* G */
-                pixel <<= 8;
-                pixel += cp->lines[cy][cx];  /* B */
-                pixel <<= 8;
+                pixel = 0;
+                for ( int k = 0; k < 3; k++ ){
+                    pixel += cp->lines[cy][cx] >> (img->precision - 8);  /* R */
+                    pixel <<= 8;
+                }
                 pixel += 0x00;  /* A */
                 data[bi] = pixel;
             }
@@ -185,7 +184,7 @@ void jbmp_make_RGBA32(JIMG * img, void * dst){
                     cp = &img->comps[k];
                     cy = j * cp->Y / bmp->height;
                     cx = i * cp->X / bmp->width;
-                    pixel += cp->lines[cy][cx];      /* R, G, B */
+                    pixel += cp->lines[cy][cx] >> (img->precision - 8); /* R, G, B */
                     pixel <<= 8;
                 }
                 pixel += 0x00;  /* A */
