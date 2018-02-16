@@ -613,14 +613,15 @@ JERR dec_decode_ECS(pinfo dinfo, JIF_SCANNER * s){
 
 JERR dec_decode_restart_interval(pinfo dinfo, JIF_SCANNER * s){
     JERR e = JERR_NONE;
-    /* reset on restart */
-    if(dinfo->is_dct_based){
-        for(int j = 0; j < dinfo->scan.Ns; j++){
-            dinfo->scan.comps[j].PRED = 0;
-        }
-    }
     
     for(int i=0; i < dinfo->scan.Ri; i++ ){
+        /* reset on restart */
+        if(dinfo->is_dct_based){
+            for(int j = 0; j < dinfo->scan.Ns; j++){
+                dinfo->scan.comps[j].PRED = 0;
+            }
+        }
+        
         e = dec_decode_ECS(dinfo, s);
         if (JERR_NONE != e){
             return e;

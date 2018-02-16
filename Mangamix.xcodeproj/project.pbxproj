@@ -71,6 +71,8 @@
 		A5B8C0B120117109002A3E0D /* jif.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = jif.c; sourceTree = "<group>"; };
 		A5DC3EA220370629002971F4 /* jcolor.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = jcolor.h; sourceTree = "<group>"; };
 		A5DC3EA320370629002971F4 /* jcolor.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = jcolor.c; sourceTree = "<group>"; };
+		A5DC3EA62037123A002971F4 /* jentropydec.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = jentropydec.h; sourceTree = "<group>"; };
+		A5DC3EA720371282002971F4 /* jerr.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = jerr.h; sourceTree = "<group>"; };
 		A5F71D151F83D11B00B045C9 /* Mangamix.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Mangamix.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A5F71D181F83D11B00B045C9 /* AppDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AppDelegate.h; sourceTree = "<group>"; };
 		A5F71D191F83D11B00B045C9 /* AppDelegate.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = AppDelegate.m; sourceTree = "<group>"; };
@@ -130,6 +132,8 @@
 				A5B8C0B120117109002A3E0D /* jif.c */,
 				A51603F3201AE00A00DCD761 /* jimg.h */,
 				A51603F4201AE00A00DCD761 /* jimg.c */,
+				A5DC3EA720371282002971F4 /* jerr.h */,
+				A5DC3EA62037123A002971F4 /* jentropydec.h */,
 				A51603F8201BA8EA00DCD761 /* jentropydec.c */,
 				A591AEB0202D83AD009AC950 /* jquantdec.h */,
 				A591AEB1202D83AD009AC950 /* jquantdec.c */,
