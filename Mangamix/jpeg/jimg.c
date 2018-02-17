@@ -30,23 +30,6 @@ struct _jimg {
     int             comps_count;    /* number of component */
 };
 
-/* the output format */
-
-typedef enum  {
-    J_COLOR_GRAY,
-    J_COLOR_RGB,
-    J_COLOR_CMYK
-} JIMG_COLOR_SPACE;
-
-struct _jbmp_info {
-    uint16_t    width;
-    uint16_t    height;
-    JIMG_COLOR_SPACE   color_space;
-    uint8_t     bits_per_pixel;
-    uint8_t     bits_per_component;
-    uint16_t    bytes_per_row;
-};
-
 JIMG * jimg_new(uint16_t width, uint16_t height, uint16_t precision){
     JIMG * img;
     if( (img = malloc(sizeof(JIMG)))){
@@ -167,6 +150,21 @@ JIMG * jimg_write_sample(JIMG * img, uint8_t comp_id, uint16_t x, uint16_t y, ui
     return 0;
 }
 
+
+JIMG_SAMPLE jimg_get_sample(JIMG * img, uint8_t comp_id, uint16_t x, uint16_t y ){
+    JIMG_COMPONENT * c;
+    
+    for( int i = 0 ; i < img->comps_count; i++){
+        c = &img->comps[i];
+        if(c->cid == comp_id){
+            if ( x < c->X && y < c->Y ){
+                return c->lines[y][x];
+            }
+        }
+    }
+    return 0;
+}
+
 void jimg_free(JIMG * img){
     if(img) {
         for( int i = 0 ; i < img->comps_count; i++){
@@ -181,58 +179,3 @@ void jimg_free(JIMG * img){
         free(img);
     }
 }
-
-JBMP_INFO * jbmp_new(void){
-    return malloc(sizeof(JBMP_INFO));
-}
-
-void jbmp_make_RGBA32(JIMG * img, void * dst){
-    JBMP_INFO * bmp = jbmp_new();
-    bmp->width = img->X;
-    bmp->height = img->Y;
-    bmp->bits_per_component = 8;
-    bmp->bits_per_pixel = 32;
-    bmp->bytes_per_row = 4 * img->X;
-    
-    uint32_t * data = (uint32_t *)dst;
-    uint32_t pixel;
-    
-    int c = img->comps_count;
-    
-    JIMG_COMPONENT * cp;
-    int cy, cx, bi;
-    if ( 1 == c ) {
-        cp = &img->comps[0];
-        for (int j = 0 ; j < bmp->height; j++) {
-            for( int i = 0; i < bmp->width; i++ ){
-                bi = j * bmp->width + i;
-                cy = j * cp->Y /  bmp->height;
-                cx = i * cp->X / bmp->width;
-                pixel = 0;
-                for ( int k = 0; k < 3; k++ ){
-                    pixel += cp->lines[cy][cx] >> (img->precision - 8);  /* R */
-                    pixel <<= 8;
-                }
-                pixel += 0x00;  /* A */
-                data[bi] = pixel;
-            }
-        }
-    } else if ( 3 == c ) {
-        for (int j = 0 ; j < bmp->height; j++) {
-            for( int i=0 ; i < bmp->width; i++){
-                bi = j * bmp->width + i;
-                pixel = 0;
-                for ( int k = 0; k < c; k++ ){
-                    cp = &img->comps[k];
-                    cy = j * cp->Y * 1.0 / bmp->height;
-                    cx = i * cp->X * 1.0 / bmp->width;
-                    pixel += cp->lines[cy][cx] >> (img->precision - 8); /* R, G, B */
-                    pixel <<= 8;
-                }
-                pixel += 0x00;  /* A */
-                data[bi] = jYCbCrA2RGBA(pixel);
-            }
-        }
-    }
-}
-

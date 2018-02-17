@@ -137,4 +137,10 @@ JIMG * j_info_get_img(pinfo dinfo);
 JERR j_info_get_error(pinfo dinfo);
 void j_dec_free(pinfo dinfo);
 
+/* write out bmp to *dst */
+
+typedef struct _jbmp_info JBMP_INFO;
+
+void j_dec_make_RGBA32(pinfo dinfo, void * dst);
+
 #endif /* jpegdec_h */

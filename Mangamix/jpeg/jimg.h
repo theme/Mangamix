@@ -15,6 +15,7 @@
 
 //  Image (Source encoder | Reconstructed from decoder)
 //  (0~255) components (sample arrays).
+//  Image Components may have different size. (But sampling factor is not kept here.)
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -29,10 +30,6 @@ typedef struct _jimg_component JIMG_COMPONENT;
 
 typedef struct _jimg JIMG;
 
-/* the output format */
-
-typedef struct _jbmp_info JBMP_INFO;
-
 /* construct */
 JIMG * jimg_new(uint16_t width, uint16_t height, uint16_t precision);
 uint16_t jimg_X(JIMG * img);
@@ -43,12 +40,11 @@ JIMG_COMPONENT * jimg_set_component(JIMG * img, uint8_t comp_id, uint16_t width,
 JIMG_COMPONENT * jimg_get_component(JIMG * img, uint8_t comp_id);
 
 /* returns 0 : dropped, else : wrote. */
-JIMG * jimg_write_sample(JIMG * img, uint8_t comp_i, uint16_t x, uint16_t y, uint16_t s);
+JIMG * jimg_write_sample(JIMG * img, uint8_t comp_i, uint16_t x, uint16_t y, JIMG_SAMPLE s);
+JIMG_SAMPLE jimg_get_sample(JIMG * img, uint8_t comp_i, uint16_t x, uint16_t y );
 
 /* free */
 void jimg_free(JIMG * img);
 
-/* write out bmp to *dst */
-void jbmp_make_RGBA32(JIMG * img, void * dst);
 
 #endif /* jimg_h */

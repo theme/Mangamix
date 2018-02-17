@@ -267,14 +267,15 @@ bool dec_read_DNL(pinfo dinfo, JIF_SCANNER *s ){
 void * dec_update_img_dimensions (pinfo dinfo){
     JIF_FRAME_COMPONENT * p;
     
-    uint16_t Hmax = 1, Vmax = 1;
-    for(int i = 0; i < dinfo->frame.Nf; i++){
+    JIF_FRAME * f = &dinfo->frame;
+    
+    for(int i = 0; i < f->Nf; i++){
         p = &(dinfo->frame.comps[i]);
-        if (Hmax < p->H){
-            Hmax = p->H;
+        if (f->Hmax < p->H){
+            f->Hmax = p->H;
         }
-        if (Vmax < p->V){
-            Vmax = p->V;
+        if (f->Vmax < p->V){
+            f->Vmax = p->V;
         }
     }
     
@@ -293,18 +294,18 @@ void * dec_update_img_dimensions (pinfo dinfo){
         /* (This is important:) inside scan subroutine there may not be enough
          information, so the component H-V is calculated, and saved at this
          place. */
-        double cX, cY;
+        uint16_t cX, cY;
         
         /* This is definition from standard:
          * Components that do not satisfy this will construct wrong image.
          * ceil(X * H / Hmax)
          */
-        cX = ceil( dinfo->frame.X * p->H * 1.0 / Hmax);  /* all int */
+        cX = ceil( (double)f->X * p->H / f->Hmax);  /* double -> int */
         
         /* This is definition from standard */
-        cY = ceil( dinfo->frame.Y * p->V * 1.0 / Vmax);
+        cY = ceil( (double)f->Y * p->V / f->Vmax);
         
-        if(!(jimg_set_component(dinfo->img, p->C, cX, cY))) /* double -> int */
+        if(!(jimg_set_component(dinfo->img, p->C, cX, cY)))
            return 0;
     }
     return dinfo->img;
@@ -417,6 +418,29 @@ bool dec_read_scan_header(pinfo dinfo, JIF_SCANNER * s){
 //      B. 1 sample ( lossless process )
 unsigned int data_unit_width(pinfo dinfo){
     return dinfo->is_dct_based ? 8: 1;
+}
+
+
+uint16_t comp_x(pinfo dinfo, uint16_t frame_x, uint8_t comp_id){
+    
+    JIF_FRAME_COMPONENT * p = frame_comp(dinfo, comp_id);
+    
+    if(p){
+        return ceil( (double)dinfo->frame.X * p->H / dinfo->frame.Hmax);
+    } else {
+        return 0;
+    }
+}
+
+uint16_t comp_y(pinfo dinfo, uint16_t frame_y, uint8_t comp_id){
+    
+    JIF_FRAME_COMPONENT * p = frame_comp(dinfo, comp_id);
+    
+    if(p){
+        return ceil( (double)dinfo->frame.Y * p->V / dinfo->frame.Vmax);
+    } else {
+        return 0;
+    }
 }
 
 JERR dec_decode_data_unit(pinfo dinfo, JIF_SCANNER * s,
@@ -905,3 +929,71 @@ void j_dec_free(pinfo dinfo){
         free(dinfo);
     }
 }
+
+
+
+struct _jbmp_info {
+    uint16_t    width;
+    uint16_t    height;
+    uint8_t     bits_per_pixel;
+    uint8_t     bits_per_component;
+    uint16_t    bytes_per_row;
+};
+
+
+JBMP_INFO * jbmp_new(void){
+    return malloc(sizeof(JBMP_INFO));
+}
+
+void j_dec_make_RGBA32(pinfo dinfo, void * dst){
+    JBMP_INFO * bmp = jbmp_new();
+    if(!bmp) return;
+    
+    bmp->width = dinfo->frame.X;
+    bmp->height = dinfo->frame.Y;
+    bmp->bits_per_component = 8;
+    bmp->bits_per_pixel = 32;
+    bmp->bytes_per_row = 4 * bmp->width;
+    
+    uint32_t * data = (uint32_t *)dst;
+    uint32_t pixel;
+    
+    int c = dinfo->frame.Nf;
+    
+    uint8_t comp_i;
+    int cy, cx, bi;
+    if ( 1 == c ) {
+        comp_i = dinfo->frame.comps[0].C;
+        for (int j = 0 ; j < bmp->height; j++) {
+            for( int i = 0; i < bmp->width; i++ ){
+                bi = j * bmp->width + i;
+                cy = comp_y(dinfo, j, comp_i);
+                cx = comp_x(dinfo, i, comp_i);
+                pixel = 0;
+                for ( int k = 0; k < 3; k++ ){
+                    pixel += jimg_get_sample(dinfo->img, comp_i, cx, cy) >> (dinfo->frame.P - 8);  /* R */
+                    pixel <<= 8;
+                }
+                pixel += 0x00;  /* A */
+                data[bi] = pixel;
+            }
+        }
+    } else if ( 3 == c ) {
+        for (int j = 0 ; j < bmp->height; j++) {
+            for( int i=0 ; i < bmp->width; i++){
+                bi = j * bmp->width + i;
+                pixel = 0;
+                for ( int k = 0; k < c; k++ ){
+                    comp_i = dinfo->frame.comps[k].C;
+                    cy = comp_y(dinfo, j, comp_i);
+                    cx = comp_x(dinfo, i, comp_i);
+                    pixel += jimg_get_sample(dinfo->img, comp_i, cx, cy) >> (dinfo->frame.P - 8);  /* R */
+                    pixel <<= 8;
+                }
+                pixel += 0x00;  /* A */
+                data[bi] = jYCbCrA2RGBA(pixel);
+            }
+        }
+    }
+}
+

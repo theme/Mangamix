@@ -30,7 +30,7 @@
         void * data = [bmpData mutableBytes];
         
         if ( bmpData.length > 0 && data) {
-            jbmp_make_RGBA32(dinfo->img, data);
+            j_dec_make_RGBA32(dinfo, data);
 //            for (int i =0; i < data_size; i++){
 //                ((uint32 *)data)[i/4] = 0xFF000000;
 //            }

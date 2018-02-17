@@ -129,6 +129,8 @@ typedef struct {
     JIF_FRAME_MODE mode;         /* got from tables/misc. segments after SOI */
     unsigned int    data_unit_X;    /* of samples in data unit */
     unsigned int    data_unit_Y;
+    uint8_t         Hmax;
+    uint8_t         Vmax;
     unsigned int    scan_count;
 } JIF_FRAME;
 
