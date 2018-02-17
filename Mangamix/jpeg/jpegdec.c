@@ -560,8 +560,8 @@ JERR dec_decode_data_unit(pinfo dinfo, JIF_SCANNER * s,
                      */
                     if(!jimg_set_component(dinfo->img,
                                            sp->Cs,
-                                           jimg_X(dinfo->img),
-                                           sy + 1)){
+                                           comp_x(dinfo, jimg_X(dinfo->img), sp->Cs),
+                                           comp_y(dinfo, sy+1, sp->Cs))){
                         return JERR_SET_COMPONENT;
                     }
                 }
@@ -588,8 +588,8 @@ JERR dec_decode_MCU(pinfo dinfo, JIF_SCANNER * s){
         int du_x, du_y; /* data unit (not sample) x, y within component */
         int mcu_x, mcu_y; // debug
         
-        for (int h = 0; h < cp->H; h++){
-            for (int v = 0; v < cp->V; v++){
+        for (int v = 0; v < cp->V; v++){
+            for (int h = 0; h < cp->H; h++){
                 mcu_x = (dinfo->scan.m % dinfo->scan.X_MCU);
                 mcu_y= (dinfo->scan.m / dinfo->scan.X_MCU);
                 
@@ -987,7 +987,6 @@ void j_dec_make_RGBA32(pinfo dinfo, void * dst){
                 }
                 pixel += 0x00;  /* A */
                 data[bi] = jYCbCrA2RGBA(pixel);
-//                data[bi] = pixel;
             }
         }
     }
