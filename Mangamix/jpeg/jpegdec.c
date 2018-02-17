@@ -735,9 +735,11 @@ JERR dec_decode_scan(pinfo dinfo, JIF_SCANNER * s){
                     }
                 }
                 
-                /* Missing RST marker, optinoal resync handling here, modify dinfo->scan.m */
-                err("err: missing RST marker.\n");
-                return JERR_MISS_M_RST;
+                if ( rc < RST_count -1){
+                    /* Missing RST marker, optinoal resync handling here, modify dinfo->scan.m */
+                    err("err: miss RST marker.\n");
+                    return JERR_MISS_M_RST;
+                }
             }
         }
         
@@ -776,7 +778,7 @@ JERR dec_decode_scan(pinfo dinfo, JIF_SCANNER * s){
                 }
                 
                 /* Missing RST marker, optinoal resync handling here, modify dinfo->scan.m */
-                err("err: missing RST marker.\n");
+                err("err: miss RST marker.\n");
                 return JERR_MISS_M_RST;
             }
         }
