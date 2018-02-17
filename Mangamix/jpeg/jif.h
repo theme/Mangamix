@@ -154,6 +154,7 @@ typedef struct {
                                      (calculated from frame and scan) */
     uint16_t     X_MCU;
     uint16_t     Y_MCU;
+    uint32_t     total_MCU;
 } JIF_SCAN;
 
 typedef struct jif_scanner {
@@ -163,6 +164,7 @@ typedef struct jif_scanner {
     jif_offset m;   /* last marker */
     uint8_t    bit_cnt;     /* jhuff:: nextbit() helper */
     byte       bit_B;       /* jhuff:: nextbit() helper */
+    byte       bit_B2;       /* jhuff:: nextbit() helper */
     byte       bit_nextbit; /* jhuff:: nextbit() helper */
     jif_offset B;   /* debug helper */
 } JIF_SCANNER;

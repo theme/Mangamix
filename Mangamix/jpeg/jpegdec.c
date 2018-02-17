@@ -575,8 +575,8 @@ JERR dec_decode_data_unit(pinfo dinfo, JIF_SCANNER * s,
 JERR dec_decode_MCU(pinfo dinfo, JIF_SCANNER * s){
     JERR e = JERR_NONE;
     
-    for ( int j = 0; j < dinfo->scan.Ns; j++){
-        JIF_SCAN_COMPONENT sp = dinfo->scan.comps[j];
+    for ( int sj = 0; sj < dinfo->scan.Ns; sj++){
+        JIF_SCAN_COMPONENT sp = dinfo->scan.comps[sj];
         JIF_FRAME_COMPONENT * cp = frame_comp(dinfo, sp.Cs);
         
         int du_x, du_y; /* data unit (not sample) x, y within component */
@@ -587,7 +587,7 @@ JERR dec_decode_MCU(pinfo dinfo, JIF_SCANNER * s){
                 du_x = (dinfo->scan.m % dinfo->scan.X_MCU) * cp->H + h;    /* data unit x */
                 du_y = (dinfo->scan.m / dinfo->scan.X_MCU) * cp->V + v;
                 
-                e = dec_decode_data_unit(dinfo, s, j, du_x, du_y);
+                e = dec_decode_data_unit(dinfo, s, sj, du_x, du_y);
                 if (JERR_NONE != e){
                     return e;
                 }
@@ -598,32 +598,24 @@ JERR dec_decode_MCU(pinfo dinfo, JIF_SCANNER * s){
     return JERR_NONE;
 }
 
-JERR dec_decode_ECS(pinfo dinfo, JIF_SCANNER * s){
+JERR dec_decode_restart_interval(pinfo dinfo, JIF_SCANNER * s){
     JERR e = JERR_NONE;
-    while(true){
+    
+    /* reset for following decoding */
+    if(dinfo->is_dct_based){
+        for(int j = 0; j < dinfo->scan.Ns; j++){
+            dinfo->scan.comps[j].PRED = 0;
+        }
+    }
+    
+    for(int i=0; i < dinfo->scan.Ri; i++ ){
+        
         e = dec_decode_MCU(dinfo, s);
         if (JERR_NONE != e){
             return e;
         }
-        ++dinfo->scan.m;
-    }
-}
-
-JERR dec_decode_restart_interval(pinfo dinfo, JIF_SCANNER * s){
-    JERR e = JERR_NONE;
-    
-    for(int i=0; i < dinfo->scan.Ri; i++ ){
-        /* reset on restart */
-        if(dinfo->is_dct_based){
-            for(int j = 0; j < dinfo->scan.Ns; j++){
-                dinfo->scan.comps[j].PRED = 0;
-            }
-        }
         
-        e = dec_decode_ECS(dinfo, s);
-        if (JERR_NONE != e){
-            return e;
-        }
+        ++dinfo->scan.m;
     }
     
     return JERR_NONE;
@@ -636,57 +628,65 @@ JERR dec_decode_scan(pinfo dinfo, JIF_SCANNER * s){
         return JERR_BAD_SCAN_HEADER;
     }
     
-    /* calculate for decoding
-     =========================*/
+    /* calculate parameters for decoding
+     ===================================*/
     
-    /* data unit X, Y
-     (set at reading frame header) */
+    /* This is the tricky part:
+     
+     At the encoding side, the image is devided into component.
+     
+     At the decoding side, the image is defined by component,
+     ralated to its components with each sampling factors.
+     (So, all component is covered with same number of MCU in row / coloumn.)
+     Image size is largest component, X, Y may from different component.
+     
+     
+     A scan contains a _complete_ encoding of one or more image components.
+     
+     But frame Y may not known at 1st scan, in this case, DNL is expected
+     after 1st scan, while some component is completed in 1st scan.
+     We expand img.component Y every time new line is needed, and call
+     update_img() to resize lines inside img.
+     
+     In either case, we decode MCU and depend on low level nextbit() to raise
+     exception on marker DNL, and we test RST marker after every scan->Ri MCU.
+     
+     If marker is not DNL nor RST, then it might be EOI, return for
+     upper level to test (because this function is decode_a_scan() ).
+     
+     */
     
     JIF_SCAN_COMPONENT * sc;
     JIF_FRAME_COMPONENT * fc;
     JIMG_COMPONENT * ic;
     
-    dinfo->scan.Nb = 0;
+    dinfo->scan.Nb = 0;     /* count of data units in MCU */
     dinfo->scan.X_MCU = 0;
+    dinfo->scan.Y_MCU = 0;
+    dinfo->scan.total_MCU = 0;
     for(int j = 0; j < dinfo->scan.Ns; j++){
         
         sc = &dinfo->scan.comps[j];
         fc = frame_comp(dinfo, sc->Cs);
+        ic = jimg_get_component(dinfo->img, sc->Cs);
         
         dinfo->scan.Nb += fc->H * fc->V;
         
         /* row # MCU = ceiling( max component width / MCU width (in sample) ) */
-        /* This is the tricky part: the image is defined by component,
-         OR the image is devided into component,
-         OR the image is ralated to its components with each sampling factors.
-         ARE the same meaning.
-         (So, all component is covered with same number of MCU in row / coloumn.)
-         Image size := largest component, X, Y may from different component.
-         
-         
-         A scan contains a _complete_ encoding of one or more image components.
-         
-         But frame Y may not known at 1st scan, in this case, DNL is expected
-         after 1st scan, while some component is completed in 1st scan. We expand
-         img.component height every time new line is needed, and expect
-         update_img() to resize and drop unneeded lines after height is defined
-         from DNL.
-         
-         In either case, we decode MCU and depend on low level nextbit() to raise
-         error on marker DNL, and we test RST marker after every scan->Ri MCU.
-         
-         If marker is not DNL nor RST, then it might be EOI, return for
-         upper level to test (because this function is decode_a_scan() ).
-         
-         */
         
         if( !dinfo->scan.X_MCU ){  /* only needed to calculate once in a scan */
-            ic = jimg_get_component(dinfo->img, sc->Cs);
             dinfo->scan.X_MCU = ic->X / dinfo->frame.data_unit_X / fc->H;
+            if ( dinfo->scan.X_MCU * dinfo->frame.data_unit_X * fc->H < ic->X ){
+                ++dinfo->scan.X_MCU;
+            }
         }
         
-        if( dinfo->frame.Y ){
-            
+        if( dinfo->frame.Y && !dinfo->scan.Y_MCU){
+            dinfo->scan.Y_MCU = ic->Y / dinfo->frame.data_unit_Y / fc->V;
+            if ( dinfo->scan.Y_MCU * dinfo->frame.data_unit_Y * fc->V < ic->Y ){
+                ++dinfo->scan.Y_MCU;
+            }
+            dinfo->scan.total_MCU = dinfo->scan.X_MCU * dinfo->scan.Y_MCU;
         }
         
         /* prepare for decoding DC */
@@ -694,37 +694,102 @@ JERR dec_decode_scan(pinfo dinfo, JIF_SCANNER * s){
     }
     
     if( dinfo->scan.Ns > 1 && dinfo->scan.Nb > 10) {
-        err("In scan Sum ( H * V ) should < 10\n");
+        printf("err: Too big MCU size %d ( H * V  should < 10 ).\n", dinfo->scan.Nb);
         return JERR_BAD_SCAN_HEADER;
     }
     
-    if (!dinfo->scan.X_MCU){
-        return JERR_MISSING_MCU_COUNT_IN_ROW;
-    }
-    
-    /* number of restart interval */
-    
     /* do decoding
      =========================== */
-    s->bit_cnt = 0;
+    s->bit_cnt = 0; // ?
     
-    dinfo->scan.m = 0;
+    dinfo->scan.m = 0; /* number MCU decoded */
     
-    if ( dinfo->scan.Ri > 0 ){/* restart marker is enabled */
-        while(true){
-            e = dec_decode_restart_interval(dinfo, s);
+    if (!dinfo->scan.X_MCU){
+        return JERR_MISSING_ROW_MCU_COUNT;
+    }
+    
+    if (dinfo->scan.Y_MCU){
+        /* scan size in MCU is known, decode all of MCU. */
+        
+        if ( dinfo->scan.Ri > 0 ){ /* restart marker (resync mechanism) is enabled.*/
             
-            /* expected RST marker */
-            JIF_MARKER m = jif_current_byte(s);
-            if( M_RST0 <= m && m <= M_RST7){
-                s->bit_cnt = 0;
-                continue;
-            } else {
-                break;
+            uint32_t RST_count = dinfo->scan.total_MCU / dinfo->scan.Ri;
+            for(uint32_t rc = 0; rc < RST_count; rc++){
+                
+                e = dec_decode_restart_interval(dinfo, s);
+                
+                if ( JERR_NONE != e ){
+                    return e;
+                }
+                
+                /* here a RST marker is expected */
+                
+                if(jif_scan_next_marker(s)){
+                    JIF_MARKER m = jif_current_marker(s);
+                    if ( M_RST0 <= m && m <= M_RST7 ){
+                        int n = (dinfo->scan.m / dinfo->scan.Ri - 1) % 8;
+                        if( (m - M_RST0) == n){
+                            s->bit_cnt = 0;
+                            continue;
+                        }
+                    }
+                }
+                
+                /* Missing RST marker, optinoal resync handling here, modify dinfo->scan.m */
+                err("err: missing RST marker.\n");
+                return JERR_MISS_M_RST;
             }
         }
-    } else { /* restart marker NOT enabled */
-        e = dec_decode_ECS(dinfo, s);
+        
+        /* Decode MCU without RST. */
+        
+        while(dinfo->scan.m < dinfo->scan.total_MCU){
+            e = dec_decode_MCU(dinfo, s);
+            if (JERR_NONE != e){
+                return e;
+            }
+            ++dinfo->scan.m;
+        }
+        
+    } else {
+        /* scan Y is not known, decode first scan. (untilDNL marker) */
+        
+        if ( dinfo->scan.Ri > 0 ){ /* restart marker (resync mechanism) is enabled.*/
+            
+            while(true) {
+                e = dec_decode_restart_interval(dinfo, s);
+                
+                if ( JERR_NONE != e ){
+                    return e;
+                }
+                
+                /* here a RST marker is expected */
+                
+                if(jif_scan_next_marker(s)){
+                    JIF_MARKER m = jif_current_marker(s);
+                    if ( M_RST0 <= m && m <= M_RST7 ){
+                        if( (m - M_RST0) == (dinfo->scan.m / dinfo->scan.Ri - 1) % 8 ){
+                            s->bit_cnt = 0;
+                            continue;
+                        }
+                    }
+                }
+                
+                /* Missing RST marker, optinoal resync handling here, modify dinfo->scan.m */
+                err("err: missing RST marker.\n");
+                return JERR_MISS_M_RST;
+            }
+        }
+        
+        /* Decode MCU without RST. */
+        
+        while(true){
+            e = dec_decode_MCU(dinfo, s);
+            if (JERR_NONE != e){
+                return e;
+            }
+            ++dinfo->scan.m;
+        }
     }
     
     return e;
@@ -757,6 +822,7 @@ unsigned int dec_decode_multi_scan(pinfo dinfo, JIF_SCANNER * s){
             default: /* error unknown */
                 if (M_EOI == jif_current_byte(s)){
                     /* EOI or more scan (after 1st scan) */
+                    printf("%x @%llu EOI\n", M_EOI, jif_get_offset(s));
                     e = JERR_NONE;
                     return ++dinfo->frame.scan_count;
                 }

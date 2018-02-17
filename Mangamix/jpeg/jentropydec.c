@@ -75,17 +75,16 @@ void jhuff_gen_decode_tbls(JTBL_HUFF * th){
 }
 
 JERR nextbit(JIF_SCANNER * s){
-    byte b2;
     if ( 0 == s->bit_cnt){
         s->bit_B = jif_scan_next_byte(s);
         s->bit_cnt = 8;
         if ( 0xFF == s->bit_B ){
-            b2 = jif_scan_next_byte(s);
-            if ( 0x00 != b2 ){
-                if ( M_DNL == b2 ){
+            s->bit_B2 = jif_scan_next_byte(s);
+            if ( 0x00 != s->bit_B2 ){
+                if ( M_DNL == s->bit_B2 ){
                     return JERR_HUFF_NEXTBIT_DNL;
                 } else {
-                    return JERR_UNKNOWN;
+                    return JERR_HUFF_NEXTBIT_M_UNKNOWN;
                 }
             }
         }
