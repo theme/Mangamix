@@ -472,8 +472,8 @@ JERR dec_decode_data_unit(pinfo dinfo, JIF_SCANNER * s,
         /* decode DC coeff, using DC table specified in scan header. */
         JIF_SCAN_COMPONENT * sp = &dinfo->scan.comps[sj];
         
-        huffval_t t;
-        coeff_t v, diff;
+        huffval_t t = 0;
+        coeff_t v = 0, diff = 0;
         
         /* DC table is type 0 */
         JERR e = jhuff_decode(dinfo->tH[0][sp->Td], s, &t);
@@ -536,9 +536,15 @@ JERR dec_decode_data_unit(pinfo dinfo, JIF_SCANNER * s,
         
         /* level shift after IDCT */
         uint16_t y, x;
+        uint16_t min = 0, max = (1 << (dinfo->frame.P)) -1;
         for (y=0; y<DCTWIDTH; y++) {
             for (x=0; x<DCTWIDTH; x++) {
                 IDCT[y][x] += 1 << (dinfo->frame.P - 1);
+                if( IDCT[y][x] < min){
+                    IDCT[y][x] = min;
+                } if ( max < IDCT[y][x] ){
+                    IDCT[y][x] = max;
+                }
             }
         }
         
