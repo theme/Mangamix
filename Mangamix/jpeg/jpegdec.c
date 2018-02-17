@@ -295,17 +295,14 @@ void * dec_update_img_dimensions (pinfo dinfo){
          place. */
         double cX, cY;
         
-        /* This is definition from standard. ceil(X * H / Hmax) */
-        cX = dinfo->frame.X * p->H / Hmax;  /* all int */
-        if( cX * Hmax < dinfo->frame.X * p->H ){
-            cX += 1;
-        }
+        /* This is definition from standard:
+         * Components that do not satisfy this will construct wrong image.
+         * ceil(X * H / Hmax)
+         */
+        cX = ceil( dinfo->frame.X * p->H * 1.0 / Hmax);  /* all int */
         
         /* This is definition from standard */
-        cY = dinfo->frame.Y * p->V / Vmax;
-        if( cY * Vmax < dinfo->frame.Y * p->V ){
-            cY += 1;
-        }
+        cY = ceil( dinfo->frame.Y * p->V * 1.0 / Vmax);
         
         if(!(jimg_set_component(dinfo->img, p->C, cX, cY))) /* double -> int */
            return 0;
@@ -378,18 +375,6 @@ bool j_dec_read_jpeg_header(pinfo dinfo){
     
     jif_del_scanner(s_soi);
     return success;
-}
-
-unsigned long j_info_img_width(pinfo dinfo){
-    return dinfo->img->X;
-};
-
-unsigned long j_info_img_height(pinfo dinfo){
-    return dinfo->img->Y;
-};
-
-unsigned int j_info_get_components(pinfo dinfo){
-    return dinfo->img->comps_count;
 }
 
 bool dec_read_scan_header(pinfo dinfo, JIF_SCANNER * s){
@@ -550,18 +535,18 @@ JERR dec_decode_data_unit(pinfo dinfo, JIF_SCANNER * s,
         }
         
         /* write to img */
-        uint16_t sx, sy;
+        uint16_t sx, sy;    /* sample x, y */
         for (y=0; y<DCTWIDTH; y++) {
             for (x=0; x<DCTWIDTH; x++) {
                 sx = du_x * data_unit_width(dinfo) + x;
                 sy = du_y * data_unit_width(dinfo) + y;
-                if (! dinfo->img->Y ){
+                if (! jimg_X(dinfo->img) ){
                     /* During the fist scan , if frame.Y is unknown,
                      jimg_set_component before writing new sample point.
                      */
                     if(!jimg_set_component(dinfo->img,
                                            sp->Cs,
-                                           dinfo->img->X,
+                                           jimg_X(dinfo->img),
                                            sy + 1)){
                         return JERR_SET_COMPONENT;
                     }
@@ -682,15 +667,12 @@ JERR dec_decode_scan(pinfo dinfo, JIF_SCANNER * s){
         /* row # MCU = ceiling( max component width / MCU width (in sample) ) */
         
         if( !dinfo->scan.X_MCU ){  /* only needed to calculate once in a scan */
-            dinfo->scan.X_MCU = ic->X / dinfo->frame.data_unit_X / fc->H;
-            if ( dinfo->scan.X_MCU * dinfo->frame.data_unit_X * fc->H < ic->X ){
-                ++dinfo->scan.X_MCU;
-            }
+            dinfo->scan.X_MCU = jimg_X(dinfo->img) / dinfo->frame.data_unit_X / fc->H;
         }
         
         if( dinfo->frame.Y && !dinfo->scan.Y_MCU){
-            dinfo->scan.Y_MCU = ic->Y / dinfo->frame.data_unit_Y / fc->V;
-            if ( dinfo->scan.Y_MCU * dinfo->frame.data_unit_Y * fc->V < ic->Y ){
+            dinfo->scan.Y_MCU = jimg_Y(dinfo->img) / dinfo->frame.data_unit_Y / fc->V;
+            if ( dinfo->scan.Y_MCU * dinfo->frame.data_unit_Y * fc->V < jimg_Y(dinfo->img) ){
                 ++dinfo->scan.Y_MCU;
             }
             dinfo->scan.total_MCU = dinfo->scan.X_MCU * dinfo->scan.Y_MCU;
@@ -905,6 +887,10 @@ bool j_dec_decode(pinfo dinfo){
 cleanup:
     jif_del_scanner(s_soi);
     return success;
+}
+
+JIMG * j_info_get_img(pinfo dinfo){
+    return dinfo->img;
 }
 
 JERR j_info_get_error(pinfo dinfo){

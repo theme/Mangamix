@@ -18,9 +18,9 @@
     CGImageRef ir = NULL;
     
     if (j_dec_decode(dinfo)){
-        
-        int width = dinfo->img->X;     /* in pixel for image */
-        int height = dinfo->img->Y;
+        JIMG * img = j_info_get_img(dinfo);
+        int width = jimg_X(img);     /* in pixel for image */
+        int height = jimg_Y(img);
         int bitsPerComponent = 8;
         int bitsPerPixel = 32;
         int bytesPerRow = 4 * width;

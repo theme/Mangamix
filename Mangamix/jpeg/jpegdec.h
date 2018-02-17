@@ -80,6 +80,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>
 
 #include "jif.h"
 #include "jimg.h"
@@ -129,11 +130,9 @@ pinfo j_dec_new(void);
 bool j_dec_set_src_array(unsigned char *src, unsigned long long size, pinfo dinfo);
 bool j_dec_read_jpeg_header(pinfo dinfo);    /* read a frame in image */
 
-unsigned long j_info_img_width(pinfo dinfo);
-unsigned long j_info_img_height(pinfo dinfo);
-unsigned int j_info_get_components(pinfo dinfo);
-
 bool j_dec_decode(pinfo dinfo);
+
+JIMG * j_info_get_img(pinfo dinfo);
 
 JERR j_info_get_error(pinfo dinfo);
 void j_dec_free(pinfo dinfo);

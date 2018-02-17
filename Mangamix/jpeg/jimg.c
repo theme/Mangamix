@@ -15,6 +15,38 @@
 
 #include "jimg.h"
 
+struct _jimg_component {
+    uint8_t     cid;       /* a unique label to the ith component */
+    uint16_t    X;          /* not for external use, no sampling factor here. */
+    uint16_t    Y;
+    JIMG_SAMPLE **lines;    /* the decoded image data */
+};
+
+struct _jimg {
+    uint16_t        X;      /* maximum component's width */
+    uint16_t        Y;
+    unsigned int    precision;        /* DCT: 8,12; those lossless: 2 ~ 16 */
+    JIMG_COMPONENT  *comps;
+    int             comps_count;    /* number of component */
+};
+
+/* the output format */
+
+typedef enum  {
+    J_COLOR_GRAY,
+    J_COLOR_RGB,
+    J_COLOR_CMYK
+} JIMG_COLOR_SPACE;
+
+struct _jbmp_info {
+    uint16_t    width;
+    uint16_t    height;
+    JIMG_COLOR_SPACE   color_space;
+    uint8_t     bits_per_pixel;
+    uint8_t     bits_per_component;
+    uint16_t    bytes_per_row;
+};
+
 JIMG * jimg_new(uint16_t width, uint16_t height, uint16_t precision){
     JIMG * img;
     if( (img = malloc(sizeof(JIMG)))){
@@ -27,6 +59,16 @@ JIMG * jimg_new(uint16_t width, uint16_t height, uint16_t precision){
         img->precision = precision;
         return img;
     } else return 0;
+}
+
+uint16_t jimg_X(JIMG * img){
+    return img->X;
+}
+uint16_t jimg_Y(JIMG * img){
+    return img->Y;
+}
+uint8_t jimg_component_count(JIMG * img){
+    return img->comps_count;
 }
 
 JIMG_COMPONENT * jimg_set_component(JIMG * img, uint8_t comp_id, uint16_t width, uint16_t height){
