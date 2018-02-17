@@ -472,8 +472,8 @@ JERR dec_decode_data_unit(pinfo dinfo, JIF_SCANNER * s,
         /* decode DC coeff, using DC table specified in scan header. */
         JIF_SCAN_COMPONENT * sp = &dinfo->scan.comps[sj];
         
-        /* Huffman Value is 8 bit, meaning is determined by each Huffman coding model. */
-        huffval_t t, v;
+        huffval_t t;
+        coeff_t v, diff;
         
         /* DC table is type 0 */
         JERR e = jhuff_decode(dinfo->tH[0][sp->Td], s, &t);
@@ -484,19 +484,17 @@ JERR dec_decode_data_unit(pinfo dinfo, JIF_SCANNER * s,
         if ( JERR_NONE != e){
             return e;
         }
-        coeff_t diff;
-        diff = jhuff_extend(v, t);/* huff_val -> coeff_t */
+        
+        diff = jhuff_extend(v, t);
         ZZ[0] = sp->PRED + diff;
         sp->PRED = ZZ[0];
         
         /* decode AC coeff, using AC table specified in scan header. */
-//        for( int i = 1; i < DCTSIZE; i++){
-//            ZZ[i] = 0;
-//        }
+
         for (unsigned int K = 1; K < DCTSIZE; K++){
             /* decode RS */
             huffval_t RS;
-            e = jhuff_decode(dinfo->tH[1][sp->Ta], s, &RS); /* AC use type 1 huffman table */
+            e = jhuff_decode(dinfo->tH[1][sp->Ta], s, &RS); /* AC : type 1 huffman table */
             if ( JERR_NONE != e){
                 return e;
             }
@@ -514,13 +512,14 @@ JERR dec_decode_data_unit(pinfo dinfo, JIF_SCANNER * s,
             }
             
             K += R;
+            
             /* decode ZZ(K) */
-            huffval_t v;
+            coeff_t v;
             e = jhuff_receive(SSSS, s, &v);
             if ( JERR_NONE != e){
                 return e;
             }
-            ZZ[K] = jhuff_extend(v, SSSS);  /* huff_val -> coeff_t */
+            ZZ[K] = jhuff_extend(v, SSSS);
         }
         
         /* dequantize using table destination specified in the frame header. */
