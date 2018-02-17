@@ -493,7 +493,7 @@ JERR dec_decode_data_unit(pinfo dinfo, JIF_SCANNER * s,
 
         for (unsigned int K = 1; K < DCTSIZE; K++){
             /* decode RS */
-            huffval_t RS;
+            huffval_t RS = 0;
             e = jhuff_decode(dinfo->tH[1][sp->Ta], s, &RS); /* AC : type 1 huffman table */
             if ( JERR_NONE != e){
                 return e;
@@ -514,7 +514,7 @@ JERR dec_decode_data_unit(pinfo dinfo, JIF_SCANNER * s,
             K += R;
             
             /* decode ZZ(K) */
-            coeff_t v;
+            coeff_t v = 0;
             e = jhuff_receive(SSSS, s, &v);
             if ( JERR_NONE != e){
                 return e;
