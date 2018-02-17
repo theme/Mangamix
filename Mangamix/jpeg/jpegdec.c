@@ -36,6 +36,32 @@ JIF_FRAME_COMPONENT * frame_comp(pinfo dinfo, uint8_t Csj){
     return 0;
 }
 
+/* This is definition from standard:
+ * Components that do not satisfy this will construct wrong image.
+ * ceil(X * H / Hmax)
+ */
+uint16_t comp_x(pinfo dinfo, uint16_t frame_x, uint8_t comp_id){
+    
+    JIF_FRAME_COMPONENT * p = frame_comp(dinfo, comp_id);
+    
+    if(p){
+        return ceil( (double)frame_x * p->H/ dinfo->frame.Hmax);
+    } else {
+        return 0;
+    }
+}
+
+uint16_t comp_y(pinfo dinfo, uint16_t frame_y, uint8_t comp_id){
+    
+    JIF_FRAME_COMPONENT * p = frame_comp(dinfo, comp_id);
+    
+    if(p){
+        return ceil( (double)frame_y * p->V / dinfo->frame.Vmax);
+    } else {
+        return 0;
+    }
+}
+
 /* private: read top level tables|misc. */
 bool dec_read_a_tbl_misc(pinfo dinfo, JIF_SCANNER *s){
     JIF_MARKER m = jif_current_marker(s);
@@ -288,22 +314,12 @@ void * dec_update_img_dimensions (pinfo dinfo){
             return 0 ;
     }
     
+    uint16_t cX, cY;
+    
     for(int i = 0; i < dinfo->frame.Nf; i++){
         p = &dinfo->frame.comps[i];
-        
-        /* (This is important:) inside scan subroutine there may not be enough
-         information, so the component H-V is calculated, and saved at this
-         place. */
-        uint16_t cX, cY;
-        
-        /* This is definition from standard:
-         * Components that do not satisfy this will construct wrong image.
-         * ceil(X * H / Hmax)
-         */
-        cX = ceil( (double)f->X * p->H / f->Hmax);  /* double -> int */
-        
-        /* This is definition from standard */
-        cY = ceil( (double)f->Y * p->V / f->Vmax);
+        cX = comp_x(dinfo, f->X, p->C) +1;
+        cY = comp_y(dinfo, f->Y, p->C) +1;
         
         if(!(jimg_set_component(dinfo->img, p->C, cX, cY)))
            return 0;
@@ -411,36 +427,6 @@ bool dec_read_scan_header(pinfo dinfo, JIF_SCANNER * s){
     }
     
     return true;
-}
-
-// Data unit :
-//      A. 8x8 sample matrix ( DCT based process )
-//      B. 1 sample ( lossless process )
-unsigned int data_unit_width(pinfo dinfo){
-    return dinfo->is_dct_based ? 8: 1;
-}
-
-
-uint16_t comp_x(pinfo dinfo, uint16_t frame_x, uint8_t comp_id){
-    
-    JIF_FRAME_COMPONENT * p = frame_comp(dinfo, comp_id);
-    
-    if(p){
-        return ceil( (double)dinfo->frame.X * p->H / dinfo->frame.Hmax);
-    } else {
-        return 0;
-    }
-}
-
-uint16_t comp_y(pinfo dinfo, uint16_t frame_y, uint8_t comp_id){
-    
-    JIF_FRAME_COMPONENT * p = frame_comp(dinfo, comp_id);
-    
-    if(p){
-        return ceil( (double)dinfo->frame.Y * p->V / dinfo->frame.Vmax);
-    } else {
-        return 0;
-    }
 }
 
 JERR dec_decode_data_unit(pinfo dinfo, JIF_SCANNER * s,
@@ -562,8 +548,8 @@ JERR dec_decode_data_unit(pinfo dinfo, JIF_SCANNER * s,
         uint16_t sx, sy;    /* sample x, y */
         for (y=0; y<DCTWIDTH; y++) {
             for (x=0; x<DCTWIDTH; x++) {
-                sx = du_x * data_unit_width(dinfo) + x;
-                sy = du_y * data_unit_width(dinfo) + y;
+                sx = du_x * dinfo->frame.data_unit_X + x;
+                sy = du_y * dinfo->frame.data_unit_X + y;
                 if (! jimg_X(dinfo->img) ){
                     /* During the fist scan , if frame.Y is unknown,
                      jimg_set_component before writing new sample point.
@@ -688,20 +674,6 @@ JERR dec_decode_scan(pinfo dinfo, JIF_SCANNER * s){
         
         dinfo->scan.Nb += fc->H * fc->V;
         
-        /* row # MCU = ceiling( max component width / MCU width (in sample) ) */
-        
-        if( !dinfo->scan.X_MCU ){  /* only needed to calculate once in a scan */
-            dinfo->scan.X_MCU = jimg_X(dinfo->img) / dinfo->frame.data_unit_X / fc->H;
-        }
-        
-        if( dinfo->frame.Y && !dinfo->scan.Y_MCU){
-            dinfo->scan.Y_MCU = jimg_Y(dinfo->img) / dinfo->frame.data_unit_Y / fc->V;
-            if ( dinfo->scan.Y_MCU * dinfo->frame.data_unit_Y * fc->V < jimg_Y(dinfo->img) ){
-                ++dinfo->scan.Y_MCU;
-            }
-            dinfo->scan.total_MCU = dinfo->scan.X_MCU * dinfo->scan.Y_MCU;
-        }
-        
         /* prepare for decoding DC */
         dinfo->scan.comps[j].PRED = 0;
     }
@@ -716,6 +688,17 @@ JERR dec_decode_scan(pinfo dinfo, JIF_SCANNER * s){
     s->bit_cnt = 0; // ?
     
     dinfo->scan.m = 0; /* number MCU decoded */
+    
+    /* row # MCU = ceiling( max component width / MCU width (in sample) ) */
+    
+    if( !dinfo->scan.X_MCU ){  /* only needed to calculate once in a scan */
+        dinfo->scan.X_MCU = ceil( (double)dinfo->frame.X / dinfo->frame.data_unit_X / dinfo->frame.Hmax);
+    }
+    
+    if( dinfo->frame.Y && !dinfo->scan.Y_MCU){
+        dinfo->scan.Y_MCU = ceil( (double)dinfo->frame.Y / dinfo->frame.data_unit_Y / dinfo->frame.Vmax);
+        dinfo->scan.total_MCU = dinfo->scan.X_MCU * dinfo->scan.Y_MCU;
+    }
     
     if (!dinfo->scan.X_MCU){
         return JERR_MISSING_ROW_MCU_COUNT;

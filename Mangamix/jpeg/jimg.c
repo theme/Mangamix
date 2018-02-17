@@ -153,7 +153,6 @@ JIMG * jimg_write_sample(JIMG * img, uint8_t comp_id, uint16_t x, uint16_t y, ui
 
 JIMG_SAMPLE jimg_get_sample(JIMG * img, uint8_t comp_id, uint16_t x, uint16_t y ){
     JIMG_COMPONENT * c;
-    
     for( int i = 0 ; i < img->comps_count; i++){
         c = &img->comps[i];
         if(c->cid == comp_id){
