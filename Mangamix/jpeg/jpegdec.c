@@ -241,6 +241,7 @@ bool dec_read_sof(pinfo dinfo, JIF_SCANNER * s){
         dinfo->frame.comps[i].H = H;
         dinfo->frame.comps[i].V = V;
         dinfo->frame.comps[i].Tq = jif_scan_next_byte(s);
+        printf(" > components %d  H %d  V %d.\n", dinfo->frame.comps[i].C, H, V);
     }
     
     return true;

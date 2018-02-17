@@ -182,8 +182,8 @@ void jbmp_make_RGBA32(JIMG * img, void * dst){
                 pixel = 0;
                 for ( int k = 0; k < c; k++ ){
                     cp = &img->comps[k];
-                    cy = j * cp->Y / bmp->height;
-                    cx = i * cp->X / bmp->width;
+                    cy = j * cp->Y * 1.0 / bmp->height;
+                    cx = i * cp->X * 1.0 / bmp->width;
                     pixel += cp->lines[cy][cx] >> (img->precision - 8); /* R, G, B */
                     pixel <<= 8;
                 }
