@@ -473,7 +473,7 @@ JERR dec_decode_data_unit(pinfo dinfo, JIF_SCANNER * s,
         JIF_SCAN_COMPONENT * sp = &dinfo->scan.comps[sj];
         
         /* Huffman Value is 8 bit, meaning is determined by each Huffman coding model. */
-        byte t, v;
+        huffval_t t, v;
         
         /* DC table is type 0 */
         JERR e = jhuff_decode(dinfo->tH[0][sp->Td], s, &t);
@@ -484,8 +484,8 @@ JERR dec_decode_data_unit(pinfo dinfo, JIF_SCANNER * s,
         if ( JERR_NONE != e){
             return e;
         }
-        coeff_t diff;   /* huff_val -> coeff_t */
-        diff = jhuff_extend(v, t);
+        coeff_t diff;
+        diff = jhuff_extend(v, t);/* huff_val -> coeff_t */
         ZZ[0] = sp->PRED + diff;
         sp->PRED = ZZ[0];
         
@@ -557,7 +557,6 @@ JERR dec_decode_data_unit(pinfo dinfo, JIF_SCANNER * s,
                                            sp->Cs,
                                            dinfo->img->X,
                                            sy + 1)){
-                        // bug: resize lose data. TODO: use scanline array in jimg comp
                         return JERR_SET_COMPONENT;
                     }
                 }

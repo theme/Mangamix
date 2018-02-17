@@ -22,7 +22,7 @@ void j_idct_ZZ(coeff_t IDCT[DCTWIDTH][DCTWIDTH], coeff_t *ZZ){
     uint16_t y, x;
     uint16_t v, u;
     
-    float s, sum;
+    double s, sum;
     
     for (y=0; y<DCTWIDTH; y++) {
         for (x=0; x<DCTWIDTH; x++) {
@@ -33,10 +33,10 @@ void j_idct_ZZ(coeff_t IDCT[DCTWIDTH][DCTWIDTH], coeff_t *ZZ){
                     
                     s = 1.0;
                     if ( 0 == u ){
-                        s /= 2;
+                        s /= sqrt(2);
                     }
                     if ( 0 == v ){
-                        s /= 2;
+                        s /= sqrt(2);
                     }
                     s *= ZZ[ZZi64[v*8 + u]];
                     s *= cos((2*x + 1) * u * M_PI / 16);

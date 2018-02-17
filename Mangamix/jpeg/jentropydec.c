@@ -40,7 +40,7 @@ void generate_code_table(JTBL_HUFF * th){
     while (true) {
         do {
             th->huffcode[k] = code;
-            code += 1;
+            code += 1;  /* generated huffcode list is in increasing order */
             k += 1;
         } while( th->huffsize[k] == si );
         
@@ -49,7 +49,7 @@ void generate_code_table(JTBL_HUFF * th){
         }
         
         do {
-            code = code << 1;
+            code = code << 1; /* int16_t is signed. Left shift is always logical. */
             si += 1;
         } while ( th->huffsize[k] != si );
     }
@@ -58,11 +58,11 @@ void generate_code_table(JTBL_HUFF * th){
 void jhuff_gen_decode_tbls(JTBL_HUFF * th){
     generate_size_table(th);
     generate_code_table(th);
-    //    jhuff_gen_huffval(th);
+    /* when decoidng, huffval is read from DHT segment */
     
     for( huffindex_t i = 1, j = 0; i <= HUFFCAT ; i++ ){
         if( 0 == th->bits[i] ){
-            th->maxcode[i] = -1;
+            th->maxcode[i] = -1;    /* sets all 1 (signed type) */
             continue;
         } else {
             th->valptr[i] = j;
@@ -105,9 +105,9 @@ JERR jhuff_decode(JTBL_HUFF * th, JIF_SCANNER * s, huffval_t *t){
         return e;
     }
     
-    huffcode_t code = s->bit_nextbit;    /* huffval_t (uint8_t) <= byte (uint8_t) */
+    huffcode_t code = s->bit_nextbit;
     
-    while( code > th->maxcode[i] ){     /* uint8 > int16 ? */
+    while( code > th->maxcode[i] ){
         i++;
         
         e = nextbit(s);
@@ -120,45 +120,42 @@ JERR jhuff_decode(JTBL_HUFF * th, JIF_SCANNER * s, huffval_t *t){
     
     huffindex_t j = th->valptr[i];
     j += code - th->mincode[i];
-    *t = th->huffval[j];
+    *t = th->huffval[j];    /* choose value according to huff code */
     
     return  JERR_NONE;
 }
 
-
-JERR jhuff_receive(huffsize_t t, JIF_SCANNER * s, huffval_t * v){
+/* put t bits into lower bits of coeff_t */
+JERR jhuff_receive(huffsize_t t, JIF_SCANNER * s, coeff_t * v){
     JERR e = JERR_NONE;
     
     if ( 0 == t){
-        *v = 0x00;
+        *v = 0;
         return e;
     }
-    
-    /* jif scan should based on byte,
-     * let jhuff_receive based on NEXTBIT, which handle EOB.
-     */
+
     for ( huffsize_t i = 0; i < t; i ++ ){
         if ( JERR_NONE != (e = nextbit(s))) {
             break;
         }
         
-        *v <<= 1;
+        *v <<= 1; /* Left shift is always logical. */
         *v += s->bit_nextbit;
     }
     
     return e;
 }
 
-huffval_t jhuff_extend(huffval_t v, huffsize_t t) {
-    huffval_t vt = 1 << ( t - 1 );
+/* extend coefficient to full precision */
+coeff_t jhuff_extend(coeff_t v, huffsize_t t) {
+    coeff_t vt = 1 << ( t - 1 );
     
-    if ( v < vt ){          // when v is negative, it's a negative DIFF/AC value
-        vt = ((-1) << t) + 1;         // is shifting a negative undefined ?
-//        vt = (0xffff << t) + 1;     // is this expected effect ?
-        v += vt;
+    if ( v < vt ){
+        vt = ((-1) << t) + 1;   // All 1 shift left
+        v += vt;                // plus lower bit
     }
     
-    return v;
+    return v;    /* extended to  precision t */
 }
 
 void jhuff_free(JTBL_HUFF * th){

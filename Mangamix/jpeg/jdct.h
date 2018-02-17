@@ -12,11 +12,11 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <math.h>
+#include "jtypes.h"
 
 #define DCTSIZE     64
 #define DCTWIDTH    8
 
-typedef int16_t coeff_t;
 
 void j_idct_ZZ(coeff_t IDCT[DCTWIDTH][DCTWIDTH], coeff_t *ZZ);
 
