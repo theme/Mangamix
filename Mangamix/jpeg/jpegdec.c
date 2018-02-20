@@ -518,10 +518,6 @@ JERR dec_decode_data_unit(pinfo dinfo, JIF_SCANNER * s,
             ZZ[K] = jhuff_extend(v, SSSS);
         }
         
-        // debug
-        if( 0 == du_x && 1 == du_y ){
-            printf("%d %d", du_x, du_y);
-        }
         /* dequantize using table destination specified in the frame header. */
         //Annex A
         JIF_FRAME_COMPONENT * cp = frame_comp(dinfo, dinfo->scan.comps[sj].Cs);
@@ -592,11 +588,6 @@ JERR dec_decode_MCU(pinfo dinfo, JIF_SCANNER * s){
             for (int h = 0; h < cp->H; h++){
                 mcu_x = (dinfo->scan.m % dinfo->scan.X_MCU);
                 mcu_y= (dinfo->scan.m / dinfo->scan.X_MCU);
-                
-                if ( 12 == mcu_x && 0 == mcu_y){
-                    printf("mcu %d, %d", mcu_x, mcu_y);
-                }
-                
                 
                 du_x =  mcu_x * cp->H + h;    /* data unit x */
                 du_y = mcu_y * cp->V + v;
