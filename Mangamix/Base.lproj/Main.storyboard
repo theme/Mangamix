@@ -713,7 +713,7 @@
                             <imageView horizontalHuggingPriority="251" verticalHuggingPriority="251" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="f86-x8-COO" userLabel="ImageView">
                                 <rect key="frame" x="0.0" y="0.0" width="460" height="292"/>
                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
-                                <imageCell key="cell" refusesFirstResponder="YES" alignment="left" imageScaling="proportionallyDown" id="flE-NF-LSv" userLabel="ImageCell"/>
+                                <imageCell key="cell" selectable="YES" editable="YES" alignment="left" imageScaling="proportionallyDown" id="flE-NF-LSv" userLabel="ImageCell"/>
                             </imageView>
                             <button verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="b3n-qY-FSh" userLabel="LoadButton">
                                 <rect key="frame" x="175" y="-7" width="111" height="32"/>
