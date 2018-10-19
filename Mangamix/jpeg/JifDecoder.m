@@ -8,12 +8,19 @@
 
 #import "JifDecoder.h"
 
-#import "jpegdec.h"
-
 @implementation JifDecoder
 
+- (id)init {
+    self = [super init];
+    if (self != nil)
+    {
+        self->dinfo = j_dec_new();
+    }
+    return self;
+}
+
 - (CGImageRef) decodeJifData:(NSData*) jifData{
-    pinfo dinfo = j_dec_new();
+    j_dec_reset(dinfo);
     j_dec_set_src_array((unsigned char*)[jifData bytes], [jifData length], dinfo);
     CGImageRef ir = NULL;
     
@@ -46,8 +53,11 @@
             CGColorSpaceRelease(space);
         }
     }
-    j_dec_free(dinfo);
     return ir;
+}
+
+- (void)dealloc {
+    j_dec_free(self->dinfo);
 }
 
 @end

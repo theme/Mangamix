@@ -68,7 +68,7 @@
     [super viewDidLoad];
 
     // Do any additional setup after loading the view.
-    self.jifDecoder = [JifDecoder alloc];
+    self.jifDecoder = [[JifDecoder alloc] init];
     
     // Create and configure the panel.
     self.openImagePanel = [NSOpenPanel openPanel];

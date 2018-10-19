@@ -30,6 +30,34 @@ pinfo j_dec_new(void) {
     return p;
 };
 
+
+void j_dec_reset(pinfo p){
+    if (p){
+        // free
+        if ( 0 != p->img) {
+            jimg_free(p->img);
+        }
+        free(p->frame.comps);
+        free(p->scan.comps);
+        
+        
+        // reset
+        p->img = 0;
+        p->frame.comps = malloc(0);
+        p->scan.comps = malloc(0);
+
+    }
+}
+
+void j_dec_free(pinfo dinfo){
+    if(dinfo){
+        jimg_free(dinfo->img);
+        free(dinfo->frame.comps);
+        free(dinfo->scan.comps);
+        free(dinfo);
+    }
+}
+
 bool j_dec_set_src_array(unsigned char *src, unsigned long long size, pinfo dinfo) {
     dinfo->src = src;
     dinfo->src_size = size;
@@ -314,7 +342,7 @@ void * dec_update_img_dimensions (pinfo dinfo){
         }
     }
     
-    /* only new / realloc dinfo->img here */
+    /* only new | reset | realloc dinfo->img here */
     if(!dinfo->img){
         dinfo->img = jimg_new(dinfo->frame.X,
                               dinfo->frame.Y,
@@ -915,17 +943,6 @@ JIMG * j_info_get_img(pinfo dinfo){
 JERR j_info_get_error(pinfo dinfo){
     return dinfo->err;
 }
-
-void j_dec_free(pinfo dinfo){
-    if(dinfo){
-        jimg_free(dinfo->img);
-        free(dinfo->frame.comps);
-        free(dinfo->scan.comps);
-        free(dinfo);
-    }
-}
-
-
 
 struct _jbmp_info {
     uint16_t    width;

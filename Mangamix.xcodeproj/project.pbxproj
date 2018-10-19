@@ -329,7 +329,7 @@
 				KnownAssetTags = (
 					"sample jpg",
 				);
-				LastUpgradeCheck = 0940;
+				LastUpgradeCheck = 1000;
 				ORGANIZATIONNAME = theme;
 				TargetAttributes = {
 					A5F71D141F83D11B00B045C9 = {
@@ -596,6 +596,7 @@
 				MACOSX_DEPLOYMENT_TARGET = 10.12;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				SDKROOT = macosx;
+				SWIFT_COMPILATION_MODE = wholemodule;
 			};
 			name = Release;
 		};

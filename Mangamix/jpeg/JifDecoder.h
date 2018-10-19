@@ -13,9 +13,15 @@
 #import <Foundation/Foundation.h>
 #import <ImageIO/ImageIO.h>
 
-@interface JifDecoder : NSObject
+#import "jpegdec.h"
+
+@interface JifDecoder : NSObject {
+    pinfo dinfo;
+}
 
 - (CGImageRef) decodeJifData:(NSData*) jifData;
+
 - (id) init;
+- (void) dealloc;
 
 @end

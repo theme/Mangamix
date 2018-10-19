@@ -130,6 +130,7 @@ typedef struct J_DEC_INFO {
 
 
 pinfo j_dec_new(void);
+void j_dec_reset(pinfo);
 bool j_dec_set_src_array(unsigned char *src, unsigned long long size, pinfo dinfo);
 bool j_dec_read_jpeg_header(pinfo dinfo);    /* read a frame in image */
 

@@ -108,7 +108,7 @@
     
     // decode
     
-    JifDecoder * jifDecoder = [JifDecoder alloc];
+    JifDecoder * jifDecoder = [[JifDecoder alloc] init];
     CGImageRef cgi = [jifDecoder decodeJifData:fileData];
     
     XCTAssert(cgi);
