@@ -16,5 +16,6 @@
 @interface JifDecoder : NSObject
 
 - (CGImageRef) decodeJifData:(NSData*) jifData;
+- (id) init;
 
 @end

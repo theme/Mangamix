@@ -11,8 +11,11 @@
 		A51603F6201AE00A00DCD761 /* jimg.c in Sources */ = {isa = PBXBuildFile; fileRef = A51603F4201AE00A00DCD761 /* jimg.c */; };
 		A51603F9201BA8EA00DCD761 /* jentropydec.c in Sources */ = {isa = PBXBuildFile; fileRef = A51603F8201BA8EA00DCD761 /* jentropydec.c */; };
 		A51603FA201BA8EA00DCD761 /* jentropydec.c in Sources */ = {isa = PBXBuildFile; fileRef = A51603F8201BA8EA00DCD761 /* jentropydec.c */; };
+		A5433A8021173CE3008DBC17 /* DropImageView.m in Sources */ = {isa = PBXBuildFile; fileRef = A5433A7F21173CE3008DBC17 /* DropImageView.m */; };
+		A5433A872117426F008DBC17 /* DropFileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5433A862117426F008DBC17 /* DropFileView.swift */; };
 		A5500B221FF50D3400F5A216 /* jpegdec.c in Sources */ = {isa = PBXBuildFile; fileRef = A5500B211FF50D3400F5A216 /* jpegdec.c */; };
 		A5500B231FF50D3400F5A216 /* jpegdec.c in Sources */ = {isa = PBXBuildFile; fileRef = A5500B211FF50D3400F5A216 /* jpegdec.c */; };
+		A582D16F216B8B1B00CED3FA /* ZIPFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A582D16C216B8B0700CED3FA /* ZIPFoundation.framework */; };
 		A591AEB2202D83AD009AC950 /* jquantdec.c in Sources */ = {isa = PBXBuildFile; fileRef = A591AEB1202D83AD009AC950 /* jquantdec.c */; };
 		A591AEB3202D83AD009AC950 /* jquantdec.c in Sources */ = {isa = PBXBuildFile; fileRef = A591AEB1202D83AD009AC950 /* jquantdec.c */; };
 		A591AEB6202E76C8009AC950 /* jdct.c in Sources */ = {isa = PBXBuildFile; fileRef = A591AEB5202E76C8009AC950 /* jdct.c */; };
@@ -37,6 +40,20 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
+		A582D16B216B8B0700CED3FA /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = A582D166216B8B0700CED3FA /* ZIPFoundation.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = "ZIPFoundation::ZIPFoundation::Product";
+			remoteInfo = ZIPFoundation;
+		};
+		A582D16D216B8B0700CED3FA /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = A582D166216B8B0700CED3FA /* ZIPFoundation.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = "ZIPFoundation::ZIPFoundationTests::Product";
+			remoteInfo = ZIPFoundationTests;
+		};
 		A5F71D2C1F83D11B00B045C9 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = A5F71D0D1F83D11B00B045C9 /* Project object */;
@@ -58,9 +75,14 @@
 		A51603F4201AE00A00DCD761 /* jimg.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = jimg.c; sourceTree = "<group>"; };
 		A51603F8201BA8EA00DCD761 /* jentropydec.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = jentropydec.c; sourceTree = "<group>"; };
 		A51603FF201BA9D700DCD761 /* jtypes.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = jtypes.h; sourceTree = "<group>"; };
+		A5433A7E21173CE3008DBC17 /* DropImageView.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = DropImageView.h; sourceTree = "<group>"; };
+		A5433A7F21173CE3008DBC17 /* DropImageView.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = DropImageView.m; sourceTree = "<group>"; };
+		A5433A852117426F008DBC17 /* Mangamix-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "Mangamix-Bridging-Header.h"; sourceTree = "<group>"; };
+		A5433A862117426F008DBC17 /* DropFileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DropFileView.swift; sourceTree = "<group>"; };
 		A5500B201FF50D3400F5A216 /* jpegdec.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = jpegdec.h; sourceTree = "<group>"; };
 		A5500B211FF50D3400F5A216 /* jpegdec.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = jpegdec.c; sourceTree = "<group>"; };
 		A557EABD2004065C00893FDC /* jif.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = jif.h; sourceTree = "<group>"; };
+		A582D166216B8B0700CED3FA /* ZIPFoundation.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = ZIPFoundation.xcodeproj; path = Carthage/Checkouts/ZIPFoundation/ZIPFoundation.xcodeproj; sourceTree = "<group>"; };
 		A591AEB0202D83AD009AC950 /* jquantdec.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = jquantdec.h; sourceTree = "<group>"; };
 		A591AEB1202D83AD009AC950 /* jquantdec.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = jquantdec.c; sourceTree = "<group>"; };
 		A591AEB4202E76C8009AC950 /* jdct.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = jdct.h; sourceTree = "<group>"; };
@@ -98,6 +120,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A582D16F216B8B1B00CED3FA /* ZIPFoundation.framework in Frameworks */,
 				A59E934E1FF3ED30004A9F48 /* ImageIO.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -120,6 +143,26 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		A5433A8421173F1E008DBC17 /* CustomViews */ = {
+			isa = PBXGroup;
+			children = (
+				A5433A7E21173CE3008DBC17 /* DropImageView.h */,
+				A5433A7F21173CE3008DBC17 /* DropImageView.m */,
+				A5433A862117426F008DBC17 /* DropFileView.swift */,
+				A5433A852117426F008DBC17 /* Mangamix-Bridging-Header.h */,
+			);
+			path = CustomViews;
+			sourceTree = "<group>";
+		};
+		A582D167216B8B0700CED3FA /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				A582D16C216B8B0700CED3FA /* ZIPFoundation.framework */,
+				A582D16E216B8B0700CED3FA /* ZIPFoundationTests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
 		A59E93331FE7D62B004A9F48 /* jpeg */ = {
 			isa = PBXGroup;
 			children = (
@@ -149,6 +192,7 @@
 			isa = PBXGroup;
 			children = (
 				A59E934D1FF3ED2F004A9F48 /* ImageIO.framework */,
+				A582D166216B8B0700CED3FA /* ZIPFoundation.xcodeproj */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -184,6 +228,7 @@
 				A5F71D1C1F83D11B00B045C9 /* ViewController.m */,
 				A5F71D1E1F83D11B00B045C9 /* Assets.xcassets */,
 				A5F71D201F83D11B00B045C9 /* Main.storyboard */,
+				A5433A8421173F1E008DBC17 /* CustomViews */,
 				A5F71D231F83D11B00B045C9 /* Info.plist */,
 				A5F71D241F83D11B00B045C9 /* main.m */,
 				A5F71D261F83D11B00B045C9 /* Mangamix.entitlements */,
@@ -289,6 +334,7 @@
 				TargetAttributes = {
 					A5F71D141F83D11B00B045C9 = {
 						CreatedOnToolsVersion = 9.0;
+						LastSwiftMigration = 0940;
 						ProvisioningStyle = Automatic;
 					};
 					A5F71D2A1F83D11B00B045C9 = {
@@ -314,6 +360,12 @@
 			mainGroup = A5F71D0C1F83D11B00B045C9;
 			productRefGroup = A5F71D161F83D11B00B045C9 /* Products */;
 			projectDirPath = "";
+			projectReferences = (
+				{
+					ProductGroup = A582D167216B8B0700CED3FA /* Products */;
+					ProjectRef = A582D166216B8B0700CED3FA /* ZIPFoundation.xcodeproj */;
+				},
+			);
 			projectRoot = "";
 			targets = (
 				A5F71D141F83D11B00B045C9 /* Mangamix */,
@@ -322,6 +374,23 @@
 			);
 		};
 /* End PBXProject section */
+
+/* Begin PBXReferenceProxy section */
+		A582D16C216B8B0700CED3FA /* ZIPFoundation.framework */ = {
+			isa = PBXReferenceProxy;
+			fileType = wrapper.framework;
+			path = ZIPFoundation.framework;
+			remoteRef = A582D16B216B8B0700CED3FA /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		A582D16E216B8B0700CED3FA /* ZIPFoundationTests.xctest */ = {
+			isa = PBXReferenceProxy;
+			fileType = file;
+			path = ZIPFoundationTests.xctest;
+			remoteRef = A582D16D216B8B0700CED3FA /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+/* End PBXReferenceProxy section */
 
 /* Begin PBXResourcesBuildPhase section */
 		A5F71D131F83D11B00B045C9 /* Resources */ = {
@@ -361,10 +430,12 @@
 				A5500B221FF50D3400F5A216 /* jpegdec.c in Sources */,
 				A5F71D251F83D11B00B045C9 /* main.m in Sources */,
 				A591AEB2202D83AD009AC950 /* jquantdec.c in Sources */,
+				A5433A8021173CE3008DBC17 /* DropImageView.m in Sources */,
 				A5B8C0B220117109002A3E0D /* jif.c in Sources */,
 				A59E93491FEE5778004A9F48 /* JifDecoder.m in Sources */,
 				A51603F9201BA8EA00DCD761 /* jentropydec.c in Sources */,
 				A51603F5201AE00A00DCD761 /* jimg.c in Sources */,
+				A5433A872117426F008DBC17 /* DropFileView.swift in Sources */,
 				A5DC3EA420370629002971F4 /* jcolor.c in Sources */,
 				A5F71D1A1F83D11B00B045C9 /* AppDelegate.m in Sources */,
 			);
@@ -532,6 +603,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = Mangamix/Mangamix.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
@@ -539,6 +611,9 @@
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = xenothe.me.Mangamix;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_OBJC_BRIDGING_HEADER = "Mangamix/CustomViews/Mangamix-Bridging-Header.h";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 3.0;
 			};
 			name = Debug;
 		};
@@ -546,6 +621,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = Mangamix/Mangamix.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
@@ -553,12 +629,15 @@
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = xenothe.me.Mangamix;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_OBJC_BRIDGING_HEADER = "Mangamix/CustomViews/Mangamix-Bridging-Header.h";
+				SWIFT_VERSION = 3.0;
 			};
 			name = Release;
 		};
 		A5F71D431F83D11B00B045C9 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
@@ -575,6 +654,7 @@
 		A5F71D441F83D11B00B045C9 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
@@ -590,6 +670,7 @@
 		A5F71D461F83D11B00B045C9 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				INFOPLIST_FILE = MangamixUITests/Info.plist;
@@ -603,6 +684,7 @@
 		A5F71D471F83D11B00B045C9 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				INFOPLIST_FILE = MangamixUITests/Info.plist;

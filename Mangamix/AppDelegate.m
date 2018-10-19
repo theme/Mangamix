@@ -25,7 +25,7 @@
 
 - (IBAction)Open:(id)sender {
     
-    NSLog(@"> JFIF");
+    NSLog(@"Menu > Open");
 }
 
 @end

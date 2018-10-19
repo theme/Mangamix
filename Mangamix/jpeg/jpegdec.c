@@ -18,6 +18,15 @@ pinfo j_dec_new(void) {
         p->tH[0][i] = jhuff_new();
         p->tH[1][i] = jhuff_new();
     }
+    
+    // init helper array for DCT algorithm
+    int i, j;
+    for (i=0; i<DCTWIDTH; i++) {
+        for (j=0; j<DCTWIDTH; j++) {
+            p->cos_array[i][j] = cos((2*i + 1) * j * M_PI / 16);
+        }
+    }
+    
     return p;
 };
 
@@ -526,7 +535,7 @@ JERR dec_decode_data_unit(pinfo dinfo, JIF_SCANNER * s,
         /* calculate 8 × 8 inverse DCT. */
         //A.3.3
         coeff_t IDCT[DCTWIDTH][DCTWIDTH] = {0};
-        j_idct_ZZ(IDCT, ZZ);
+        j_idct_ZZ(IDCT, ZZ, dinfo->cos_array);
         
 //        j_ZZ_dbg(ZZ);
         

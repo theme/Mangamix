@@ -18,7 +18,8 @@ const uint16_t ZZi64[64] =
     21, 34, 37, 47, 50, 56, 59, 61,
     35, 36, 48, 49, 57, 58, 62, 63};
 
-void j_idct_ZZ(coeff_t IDCT[DCTWIDTH][DCTWIDTH], coeff_t *ZZ){
+
+void j_idct_ZZ(coeff_t IDCT[DCTWIDTH][DCTWIDTH], coeff_t *ZZ, double helper_cos_arr[DCTWIDTH][DCTWIDTH]){
     uint16_t y, x;
     uint16_t v, u;
     
@@ -31,7 +32,7 @@ void j_idct_ZZ(coeff_t IDCT[DCTWIDTH][DCTWIDTH], coeff_t *ZZ){
             for( u=0; u< DCTWIDTH; u++){
                 for( v=0; v < DCTWIDTH; v++){
                     
-                    s = 1.0;
+                    s = (CALC_T)1.0;
                     if ( 0 == u ){
                         s /= sqrt(2);
                     }
@@ -39,8 +40,8 @@ void j_idct_ZZ(coeff_t IDCT[DCTWIDTH][DCTWIDTH], coeff_t *ZZ){
                         s /= sqrt(2);
                     }
                     s *= ZZ[ZZi64[v*8 + u]];
-                    s *= cos((2*x + 1) * u * M_PI / 16);
-                    s *= cos((2*y + 1) * v * M_PI / 16);
+                    s *= helper_cos_arr[x][u];
+                    s *= helper_cos_arr[y][v];
                     sum += s;
                 }
             }

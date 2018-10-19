@@ -17,8 +17,9 @@
 #define DCTSIZE     64
 #define DCTWIDTH    8
 
+#define CALC_T double // inner idct calculation type
 
-void j_idct_ZZ(coeff_t IDCT[DCTWIDTH][DCTWIDTH], coeff_t *ZZ);
+void j_idct_ZZ(coeff_t IDCT[DCTWIDTH][DCTWIDTH], coeff_t *ZZ, double helper_cos_arr[DCTWIDTH][DCTWIDTH]);
 
 void j_ZZ_dbg(coeff_t *ZZ);
 

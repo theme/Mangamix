@@ -123,6 +123,9 @@ typedef struct J_DEC_INFO {
     
     /* (for decoder) other info */
     JERR           err;
+    
+    /* (for dct algorithm) helper array */
+    double      cos_array[DCTWIDTH][DCTWIDTH];
 } * pinfo;
 
 
